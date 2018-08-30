@@ -1,0 +1,66 @@
+用sql查询结果，返回字典型list，也可以正常显示到页面。
+
+```python
+# coding: utf-8
+from rest_framework import viewsets
+from django.db.models import Count
+
+import datetime
+from dateutil.relativedelta import relativedelta
+
+from django.db import connection
+
+from mplace.models import CountReply, NeedFavorite, Comment
+from mplace.serializers.reply_ranking_serializer import ReplyRankingSerializer
+
+
+def dictfetchall(cursor):
+    columns = [col[0] for col in cursor.description]
+    return [
+        dict(zip(columns, row))
+        for row in cursor.fetchall()
+        ]
+
+
+class ReplyRankingViewSet(viewsets.ModelViewSet):
+    serializer_class = ReplyRankingSerializer
+    queryset = Comment.objects.values('need_id').annotate(Count('need_id')).order_by('-need_id__count')
+
+    def filter_queryset(self, queryset):
+        if "howlong" in self.request.query_params:
+            howlong = self.request.GET["howlong"]
+            if howlong is not None and len(howlong) > 0:
+                howlong_arr = howlong.split(" ")
+                today = datetime.date.today()
+                if howlong_arr[0] == "months":
+                    howlong_ago = today - relativedelta(months=int(howlong_arr[1]))
+                if howlong_arr[0] == "weeks":
+                    howlong_ago = today - relativedelta(weeks=int(howlong_arr[1]))
+                # queryset = CountReply.objects.filter(cre_dt__gte=howlong_ago).values('need_id').annotate(Count('need_id')).order_by('-need_id__count')
+
+                query = """SELECT need_id, COUNT(need_id) as "need_id__count" FROM (
+                            SELECT mplace_comment.need_id, mplace_recomment.cre_dt FROM mplace_recomment INNER JOIN mplace_comment ON mplace_recomment.comment_id = mplace_comment.id
+                            UNION
+                            SELECT need_id, cre_dt FROM mplace_comment
+                        ) WHERE cre_dt >= "%s"
+                        GROUP BY need_id ORDER BY "need_id__count" DESC
+                        """ % datetime.datetime.combine(howlong_ago, datetime.datetime.min.time())
+                cursor = connection.cursor()
+                cursor.execute(query)
+                queryset = dictfetchall(cursor)
+        return queryset
+
+    def get_serializer(self, *args, **kwargs):
+        serializer = super(ReplyRankingViewSet, self).get_serializer(*args, **kwargs)
+        if "username" in self.request.query_params:
+            username = self.request.query_params["username"]
+            if hasattr(serializer, "instance") and serializer.instance is not None and len(serializer.instance) > 0:
+                for need in serializer.instance:
+                    count = NeedFavorite.objects.filter(need_id=need["need_id"], username=username).count()
+                    if count > 0:
+                        need["isfavorite"] = True
+                    else:
+                        need["isfavorite"] = False
+        return serializer
+
+```
