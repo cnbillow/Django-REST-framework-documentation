@@ -1,3 +1,5 @@
+queryset = queryset.extra(where=[" exists (select * from other_table)"])
+
 用sql查询结果，返回字典型list，也可以正常显示到页面。
 
 ```python
