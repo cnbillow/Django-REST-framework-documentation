@@ -1,5 +1,15 @@
 https://www.cnblogs.com/liwenzhou/p/8543035.html
 
+angular
+      return this.http.post(S_URL_ROOT + '/comment_mail_person/del_person/',
+          {'comment_id': this.comment_id, 'del_person': add_user}, { headers: headers } ).subscribe(
+
+python
+    @list_route(methods=['post'])
+    def del_person(self, request):
+    
+ ----------------------------
+
 queryset = queryset.extra(where=[" exists (select * from other_table)"])
 
 用sql查询结果，返回字典型list，也可以正常显示到页面。
