@@ -1,5 +1,18 @@
 https://www.cnblogs.com/liwenzhou/p/8543035.html
 
+
+angular
+  get_add_user_list(comment_id: number) {
+    return this.http.get(S_URL_ROOT + '/comment/get_add_user_list/?comment_id=' + comment_id, {headers: this.headers});
+  }
+
+
+python
+    @list_route(methods=['get'])
+    def get_add_user_list(self, request):
+
+----------------------------------------
+
 angular
       return this.http.post(S_URL_ROOT + '/comment_mail_person/del_person/',
           {'comment_id': this.comment_id, 'del_person': add_user}, { headers: headers } ).subscribe(
