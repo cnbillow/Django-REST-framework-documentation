@@ -1,5 +1,9 @@
 https://www.cnblogs.com/liwenzhou/p/8543035.html
 
+    @detail_route(methods=['post'])
+    def set_password(self, request, pk=None):
+    
+ -------------------------------------------
 
 angular
   get_add_user_list(comment_id: number) {
