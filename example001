@@ -1,3 +1,28 @@
+      $.ajax({
+        url:'{% url 'vdi:download_flag_grant' %}',
+        type:'POST',
+        data: {
+          'csrfmiddlewaretoken': '{{csrf_token}}',
+          'request_data_array_param': request_data_array_param,
+          'search_condition_post': '{{ search_condition|urlencode }}'
+        },
+        dataType:'json',
+        async:true,
+        //300秒でタイムアウト
+        timeout: 300000,
+        beforeSend: function(xhr, settings) {
+          //2重送信防止 ボタンをdisable にする
+          $("#btn_download_flag_grant").attr('disabled', true);
+        },
+        success: function(data){
+          // 処理なし
+        },
+        complete:function(){
+          window.location.reload();
+        }
+      });
+
+
 将a标签写成 <a href="javascript:void(0)" onclick="fun_a()" ></a>
 然后fun_a写跳转事件 location.href="";
 
