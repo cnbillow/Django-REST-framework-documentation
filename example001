@@ -32,6 +32,23 @@ https://www.cnblogs.com/liwenzhou/p/8543035.html
     def set_password(self, request, pk=None):
     
  -------------------------------------------
+ 
+ 
+GET /need_read/get_need_reads/?need_id=[need_id]&username=[username]
+
+    @list_route(methods=['get'])
+    def get_need_reads(self, request):
+        try:
+            need_id = request.query_params["need_id"]
+            username = request.query_params["username"]
+            queryset = NeedRead.objects.filter(need_id=need_id).exclude(username=username)
+            # many=True  表示能序列化多个对象
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+ 
+ -------------------------------------------
 
 angular
   get_add_user_list(comment_id: number) {
