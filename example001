@@ -1,4 +1,25 @@
-      $.ajax({
+多对多表，防止多次查询。性能改善。
+
+# views.py
+class MyView(generics.ListAPIView):
+    serializer_class = WorkingSerializer
+
+    def get_queryset(self):
+        queryset = MyModel.objects.all()
+        queryset = self.get_serializer_class().setup_eager_loading(queryset)
+        return queryset
+
+# serializers.py
+class WorkingSerializer(serializers.ModelSerializer):
+    related_field_name = CustomSerializer(many=True)
+
+    @staticmethod
+    def setup_eager_loading(queryset):
+        queryset = queryset.prefetch_related('related_field_name')
+        return queryset
+        
+-------------------------------------------------------------
+$.ajax({
         url:'{% url 'vdi:download_flag_grant' %}',
         type:'POST',
         data: {
