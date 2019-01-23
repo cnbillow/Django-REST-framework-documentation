@@ -1,4 +1,4 @@
-多对多表，防止多次查询。性能改善。
+1対N、N对N表，防止多次查询。性能改善。
 
 # views.py
 class MyView(generics.ListAPIView):
@@ -15,7 +15,15 @@ class WorkingSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def setup_eager_loading(queryset):
-        queryset = queryset.prefetch_related('related_field_name')
+    	#prefetch_related for 'to-many' relationships
+        queryset = queryset.prefetch_related('specialities', 'specialities__tec_platform', 'tec_platforms')
+        return queryset
+        
+OR
+    @staticmethod
+    def setup_eager_loading(queryset):
+		#select_related for 'to-one' relationships
+        queryset = queryset.select_related('tec_platform')
         return queryset
         
 -------------------------------------------------------------
