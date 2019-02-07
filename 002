@@ -1,0 +1,35 @@
+class MeltwaterSerializer(serializers.Serializer):
+    title = serializers.CharField(read_only=True)
+    summary = serializers.CharField(read_only=True)
+
+    class Meta:
+        fields = ("title", "summary")
+        
+
+class MeltwaterViewset(viewsets.ViewSet):
+
+    def list(self, request):
+        # 検索値
+        query = request.GET.get("query", "")
+        logger.info("query=" + query)
+
+        wex_response = requests.get(
+            xxxxx,
+            headers={'Content-Type': 'application/json', },
+            params={'output': "application/json"}
+        )
+        meltwater_list = []
+        if wex_response.status_code == 200:
+            rep_result = json.loads(wex_response.text)
+            if "es_result" in rep_result["es_apiResponse"] and rep_result["es_apiResponse"]["es_result"]:
+                for es_result in rep_result["es_apiResponse"]["es_result"]:
+                    meltwater_list.append({
+                        'title': es_result["es_id"],
+                        'summary': es_result["es_summary"]
+                    })
+            serializer = MeltwaterSerializer(meltwater_list, many=True)
+            return Response(serializer.data)
+        else:
+            return Response('{message:Wex API からエラーレスポンスが返りました。['
+                            + wex_response.text + '] }',
+                            status=wex_response.status_code)
