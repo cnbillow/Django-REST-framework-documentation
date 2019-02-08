@@ -36,3 +36,43 @@ class MeltwaterViewset(viewsets.ViewSet):
             return Response('{message:Wex API からエラーレスポンスが返りました。['
                             + wex_response.text + '] }',
                             status=wex_response.status_code)
+
+
+
+
+
+
+
+
+
+
+-----------------------------------------------------------------
+
+serializer.py
+class RelatedPersonSerializer(serializers.Serializer):
+    name = serializers.CharField(read_only=True)
+    frequency = serializers.CharField(read_only=True)
+    correlation = serializers.CharField(read_only=True)
+
+    class Meta:
+        fields = ("name", "frequency", "correlation")
+
+
+view.py
+class MeltwaterViewset(viewsets.ViewSet):
+    @action(detail=False, methods=['get'])
+    def search_related_persons(self, request):
+        serializer = RelatedPersonSerializer(related_persons_list, many=True)
+        return Response(serializer.data)
+        
+
+urls.py
+router = DefaultRouter()
+router.register(r'meltwater', MeltwaterViewset, basename='meltwater')
+
+urlpatterns = [
+    url(r'^', include(router.urls)),
+]
+
+
+http://127.0.0.1:8090/meltwater/search_related_persons/?query=a
