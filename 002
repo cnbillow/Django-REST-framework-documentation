@@ -1,3 +1,6 @@
+
+https://www.cnblogs.com/leigepython/p/9102074.html
+
 class MeltwaterSerializer(serializers.Serializer):
     title = serializers.CharField(read_only=True)
     summary = serializers.CharField(read_only=True)
