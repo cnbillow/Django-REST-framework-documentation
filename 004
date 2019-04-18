@@ -1,0 +1,37 @@
+highcharts-angular
+https://github.com/highcharts/highcharts-angular#installing
+
+<highcharts-chart 
+  [Highcharts]="Highcharts"
+  [constructorType]="chartConstructor"
+  [options]="chartOptions"
+
+  [(update)]="updateFlag"
+  [oneToOne]="oneToOneFlag"
+  
+  class="display-wordcloud"
+></highcharts-chart>
+
+
+  Highcharts = Highcharts;
+  chartConstructor = 'chart';
+  chartOptions = {
+    'series': [
+      {
+        'type': 'wordcloud',
+        'data': [],
+        'name': 'Occurrences',
+        // 横書き表示のための設定
+        'rotation': {
+          'from': 0,
+          'to': 0,
+          'orientations': 5
+        }
+      }
+    ],
+    'title': {
+      'text': null
+    },
+  };
+  updateFlag = false;
+  oneToOneFlag = true;
