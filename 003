@@ -4,3 +4,14 @@ https://www.jianshu.com/p/03e08399587e
 https://zh.wikipedia.org/wiki/%E9%98%BF%E9%87%8C%E5%B7%B4%E5%B7%B4%E9%9B%86%E5%9B%A2
 https://zh.wikipedia.org/wiki/Category:%E6%B7%B1%E5%9C%B3%E8%AF%81%E5%88%B8%E4%BA%A4%E6%98%93%E6%89%80%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8
 小马智行
+
+
+两个以上参数设置
+urlpatterns = [
+    url(r'^', include(router.urls)),
+    url("trendwords/(?P<collection_id>[a-zA-Z0-9]+)/(?P<month>[0-9]{6})/", TrendwordsViewset.as_view({'get': 'get_trend_words'}), name="get_trend_words"),
+]
+
+class TrendwordsViewset(viewsets.ViewSet):
+    @action(detail=False, methods=['get'])
+    def get_trend_words(self, request, collection_id, month):
