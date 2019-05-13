@@ -19,6 +19,11 @@ class TrendwordsViewset(viewsets.ViewSet):
 加注释
 pip install coreapi
 
+import coreapi
+import coreschema
+from rest_framework import schemas
+
+
 class XXXViewset(viewsets.ViewSet):
     schema = schemas.ManualSchema(fields=[
             coreapi.Field(
