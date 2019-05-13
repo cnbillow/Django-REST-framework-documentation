@@ -15,3 +15,29 @@ urlpatterns = [
 class TrendwordsViewset(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def get_trend_words(self, request, collection_id, month):
+
+加注释
+pip install coreapi
+
+class XXXViewset(viewsets.ViewSet):
+    schema = schemas.ManualSchema(fields=[
+            coreapi.Field(
+                'XXX_id',
+                required=True,
+                location="path",
+                schema=coreschema.Array(
+                    description="XXX_id"
+                )
+            ),
+            coreapi.Field(
+                'month',
+                required=True,
+                location="path",
+                schema=coreschema.Array(
+                    description="month2"
+                )
+            ),
+        ])
+
+    @action(detail=False, methods=['get'])
+    def get_trend_words(self, request, collection_id, month):
