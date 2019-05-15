@@ -9,7 +9,7 @@ https://zh.wikipedia.org/wiki/Category:%E6%B7%B1%E5%9C%B3%E8%AF%81%E5%88%B8%E4%B
 两个以上参数设置
 urlpatterns = [
     url(r'^', include(router.urls)),
-    url("trendwords/(?P<collection_id>[a-zA-Z0-9]+)/(?P<month>[0-9]{6})/", TrendwordsViewset.as_view({'get': 'get_trend_words'}), name="get_trend_words"),
+    url("trendwords/get_trend_words/(?P<collection_id>[a-zA-Z0-9]+)/(?P<month>[0-9]{6})/", TrendwordsViewset.as_view({'get': 'get_trend_words'}), name="get_trend_words"),
 ]
 
 class TrendwordsViewset(viewsets.ViewSet):
