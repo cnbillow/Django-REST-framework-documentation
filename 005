@@ -1,0 +1,200 @@
+# coding: utf-8
+
+import logging
+import datetime
+
+import os
+import datetime as dt
+import pandas as pd
+import pandas_datareader.data as web
+import requests
+from bs4 import BeautifulSoup
+
+import coreapi
+import coreschema
+
+from rest_framework.decorators import action
+from dateutil.relativedelta import relativedelta
+
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework import viewsets
+from rest_framework import schemas
+
+from ss.serializers.tesla_serializer import TeslaSerializer
+from ssposinega.models import DaylyPosinega
+
+
+logger = logging.getLogger("ss")
+
+# プロキシの設定
+os.environ['http_proxy'] = 'http://0191632:1qazxsw2@prxb321.plain.sharedom.net:8080/'
+os.environ['https_proxy'] = 'http://0191632:1qazxsw2@prxb321.plain.sharedom.net:8080/'
+
+
+class TeslaViewset(viewsets.ViewSet):
+
+    schema = schemas.ManualSchema(fields=[
+        coreapi.Field(
+            'collection_id',
+            required=True,
+            location="path",
+            schema=coreschema.Array(
+                description="コレクションID"
+            )
+        ),
+        coreapi.Field(
+            'from_day',
+            required=True,
+            location="path",
+            schema=coreschema.Array(
+                description="開始日（YYYYmmdd）"
+            )
+        ),
+        coreapi.Field(
+            'to_day',
+            required=True,
+            location="path",
+            schema=coreschema.Array(
+                description="終了日（YYYYmmdd）"
+            )
+        ),
+    ])
+
+    @action(detail=False, methods=['get'])
+    def get_tesla_stock_price_month(self, request, collection_id, from_month, to_month):
+        posinega_list = []
+        d_from_month = datetime.datetime.strptime(from_month, "%Y%m")
+        start_month = d_from_month.year * 12 + d_from_month.month
+        d_to_month = datetime.datetime.strptime(to_month, "%Y%m")
+        end_month = d_to_month.year * 12 + d_to_month.month
+
+        try:
+            # 株価取得
+            start = dt.datetime(d_from_month.year, d_from_month.month, 1)
+            end = (d_to_month + relativedelta(months=1)).replace(day=1) - datetime.timedelta(days=1)
+
+            df = web.get_data_yahoo('TSLA', start, end, interval='mo')
+            stock_price_list = str(df["Close"]).split("\n")
+
+            for year_month in range(start_month, end_month + 1):
+                if year_month % 12 == 0:
+                    year = year_month // 12 - 1
+                    month = 12
+                else:
+                    year = year_month // 12
+                    month = year_month % 12
+
+                has_stock_price = False
+                for stock_price in stock_price_list:
+                    if stock_price.startswith(dt.datetime(year, month, 1).strftime('%Y-%m-%d')):
+                        stock_price = round(float(stock_price.split("    ")[1]), 2)
+                        has_stock_price = True
+                        break
+                if not has_stock_price:
+                    stock_price = 0
+
+                daylyPosinega_list = DaylyPosinega.objects.filter(collection_id__exact=collection_id, date__year=year, date__month=month)
+                sum_negative_count = 0
+                sum_positive_count = 0
+                sum_ambivalent_count = 0
+                for daylyPosinega in daylyPosinega_list:
+                    sum_negative_count += daylyPosinega.negative_count
+                    sum_positive_count += daylyPosinega.positive_count
+                    sum_ambivalent_count += daylyPosinega.ambivalent_count
+                posinega_list.append({
+                    'month': str(year) + "/" + str(month),
+                    'negative': sum_negative_count,
+                    'positive': sum_positive_count,
+                    'stock_price': stock_price,
+                })
+        except Exception as e:
+            return Response('{message:エラーが発生しました。[' + str(e) + ']}',
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = TeslaSerializer(posinega_list, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def get_tesla_stock_price_week(self, request, collection_id, from_day, to_day):
+        posinega_list = []
+        d_from_day = datetime.datetime.strptime(from_day, "%Y%m%d")
+        if d_from_day.weekday() != 0:
+            d_from_day += datetime.timedelta(days=(7-d_from_day.weekday()))
+        d_to_day = datetime.datetime.strptime(to_day, "%Y%m%d")
+        if d_to_day.weekday() < 5:
+            d_to_day += datetime.timedelta(days=-(d_to_day.weekday() + 1))
+
+        try:
+            # 株価取得
+            df = web.get_data_yahoo('TSLA', d_from_day, d_to_day, interval='wk')
+            stock_price_list = str(df["Close"]).split("\n")
+
+            while d_from_day < d_to_day:
+
+                has_stock_price = False
+                for stock_price in stock_price_list:
+                    if stock_price.startswith(d_from_day.strftime('%Y-%m-%d')):
+                        stock_price = round(float(stock_price.split("    ")[1]), 2)
+                        has_stock_price = True
+                        break
+                if not has_stock_price:
+                    stock_price = 0
+
+                weekend = d_from_day + datetime.timedelta(days=6)
+                daylyPosinega_list = DaylyPosinega.objects.filter(collection_id__exact=collection_id, date__range=(d_from_day, weekend))
+                sum_negative_count = 0
+                sum_positive_count = 0
+                sum_ambivalent_count = 0
+                for daylyPosinega in daylyPosinega_list:
+                    sum_negative_count += daylyPosinega.negative_count
+                    sum_positive_count += daylyPosinega.positive_count
+                    sum_ambivalent_count += daylyPosinega.ambivalent_count
+                posinega_list.append({
+                    'week': d_from_day.strftime('%Y/%m/%d'),
+                    'negative': sum_negative_count,
+                    'positive': sum_positive_count,
+                    'stock_price': stock_price,
+                })
+                d_from_day = weekend + datetime.timedelta(days=1)
+        except Exception as e:
+            return Response('{message:エラーが発生しました。[' + str(e) + ']}',
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = TeslaSerializer(posinega_list, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def get_tesla_stock_price_day(self, request, collection_id, from_day, to_day):
+        posinega_list = []
+
+        d_from_day = datetime.datetime.strptime(from_day, "%Y%m%d")
+        d_to_day = datetime.datetime.strptime(to_day, "%Y%m%d")
+
+        try:
+            # 株価取得
+            df = web.get_data_yahoo('TSLA', d_from_day, d_to_day, interval='d')
+            stock_price_list = str(df["Close"]).split("\n")
+
+            daylyPosinega_list = DaylyPosinega.objects.filter(collection_id__exact=collection_id, date__range=(d_from_day, d_to_day))
+            for daylyPosinega in daylyPosinega_list:
+                has_stock_price = False
+                for stock_price in stock_price_list:
+                    if stock_price.startswith(daylyPosinega.date.strftime('%Y-%m-%d')):
+                        stock_price = round(float(stock_price.split("    ")[1]), 2)
+                        has_stock_price = True
+                        break
+                if not has_stock_price:
+                    stock_price = 0
+                posinega_list.append({
+                    'day': daylyPosinega.date.strftime('%Y/%m/%d'),
+                    'negative': daylyPosinega.negative_count,
+                    'positive': daylyPosinega.positive_count,
+                    'stock_price': stock_price,
+                })
+        except Exception as e:
+            return Response('{message:エラーが発生しました。[' + str(e) + ']}',
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = TeslaSerializer(posinega_list, many=True)
+        return Response(serializer.data)
