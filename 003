@@ -1,5 +1,15 @@
 股票api
 https://github.com/pydata/pandas-datareader/issues/587
+import datetime as dt
+import pandas as pd
+import pandas_datareader.data as web
+ 
+start = dt.datetime(year, month, 1)
+end = dt.datetime(year, month, 1) + datetime.timedelta(days=1)
+df = web.get_data_yahoo('TSLA', start, end, interval='mo')
+stock_price = round(float(df["Close"].values), 2)
+
+
 
 http://grace.hcoder.net/
 https://www.jianshu.com/p/03e08399587e
