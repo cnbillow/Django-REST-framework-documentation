@@ -1,0 +1,141 @@
+html
+<highcharts-chart 
+  [Highcharts]="Highcharts"
+  [constructorType]="chartConstructor"
+  [options]="chartOptions"
+
+  [(update)]="updateFlag"
+  [oneToOne]="oneToOneFlag"
+  
+  class="display-line-basic"
+></highcharts-chart>
+
+js
+import { Component, OnInit, Input } from '@angular/core';
+import * as Highcharts from 'highcharts';
+import { Router } from '@angular/router';
+import { PosinegaService } from '../../services/posinega.service';
+
+@Component({
+  selector: 'app-line-basic',
+  templateUrl: './line-basic.component.html',
+  styleUrls: ['./line-basic.component.css']
+})
+export class LineBasicComponent implements OnInit {
+  @Input() collectionId: string;
+  @Input() from_month: string;
+  @Input() to_month: string;
+  @Input() from_day: string;
+  @Input() to_day: string;
+
+  Highcharts = Highcharts;
+  chartConstructor = 'chart';
+  chartOptions = {
+
+    title: {
+      text: 'xxxxx'
+    },
+
+    subtitle: {
+      text: ''
+    },
+
+    xAxis: {
+      categories: []
+    },
+
+    yAxis: {
+      title: {
+        text: ''
+      }
+    },
+    legend: {
+      layout: 'vertical',
+      align: 'right',
+      verticalAlign: 'middle'
+    },
+
+    plotOptions: {
+      series: {
+        label: {
+          connectorAllowed: false
+        },
+      }
+    },
+
+    series: [],
+
+    responsive: {
+      rules: [{
+        condition: {
+          maxWidth: 500
+        },
+        chartOptions: {
+          legend: {
+            layout: 'horizontal',
+            align: 'center',
+            verticalAlign: 'bottom'
+          }
+        }
+      }]
+    }
+
+  };
+  updateFlag = false;
+  oneToOneFlag = true;
+
+  constructor(public router: Router,
+    private posinegaService: PosinegaService) { }
+
+  ngOnInit() {
+    this.getMonthPosinegaData();
+  }
+
+  getMonthPosinegaData() {
+    this.posinegaService.getMonthPosinegaList(this.collectionId, this.from_month, this.to_month).subscribe(
+      data => {
+        const xCategories = [];
+        const negativeCountList = [];
+        const positiveCountList = [];
+        const ambivalentCountList = [];
+        data.forEach(posinega => {
+          xCategories.push(posinega.month);
+          negativeCountList.push(posinega.negative);
+          positiveCountList.push(posinega.positive);
+          ambivalentCountList.push(posinega.ambivalent);
+        });
+
+        this.chartOptions['series'] = [
+          {
+            name: 'negative',
+            data: negativeCountList,
+            color: 'red'
+          },
+          {
+            name: 'positive',
+            data: positiveCountList,
+            color: 'green'
+          },
+          {
+            name: 'ambivalent',
+            data: ambivalentCountList,
+            color: 'gray'
+          },
+        ];
+
+        this.chartOptions['xAxis']['categories'] = xCategories;
+
+        this.updateFlag = true;
+      },
+      err => {
+        if (err.status === 401) {
+          this.router.navigate(['/login/']);
+          return;
+        } else {
+          //
+        }
+      }
+    );
+  }
+
+}
