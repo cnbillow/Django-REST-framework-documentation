@@ -2,3 +2,17 @@ https://github.com/Eeyhan/onlinestudy
 
 Neo4j
 传智播客&黑马出品的Python24期人工智能视频
+
+from rest_framework.decorators import detail_route
+views.py
+
+class AuthorizationSet(viewsets.ViewSet):
+    @detail_route(methods=['post'])
+    def is_user(self, request, *args, **kwargs):
+    
+    
+urls.py
+urlpatterns = [
+    url(r'^', include(router.urls)),
+    url(r'^is_user/$', AuthorizationSet.as_view({'post': 'is_user'}), name="is_user"),
+]
