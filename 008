@@ -16,3 +16,30 @@ urlpatterns = [
     url(r'^', include(router.urls)),
     url(r'^is_user/$', AuthorizationSet.as_view({'post': 'is_user'}), name="is_user"),
 ]
+
+-----------------------------------------------------------------------------------------------
+同一component多次访问时，比如URL的参数不同。
+//copied from app.module.ts
+const appRoutes:Routes = [
+  {path:'items/:id',component:ItemsComponent},
+];
+
+//copied from navbar.component.html
+<ul>
+      <li><a [routerLink]="['/items/8']">Rashion</a></li>
+      <li><a [routerLink]="['/items/2']">Vegitables</a></li>       
+</ul>
+浏览器的URL改变，component内容未改变。对应方法如下
+private sub: any;
+
+ngOnInit() {
+  this.sub = this.route.params.subscribe(params => {
+     let id = +params['id']; // (+) converts string 'id' to a number
+     this.service.getHero(id).then(hero => this.hero = hero);
+   });
+}
+
+ngOnDestroy() {
+  this.sub.unsubscribe();
+}
+--------------------------------------------------------------------------------
