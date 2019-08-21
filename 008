@@ -18,6 +18,7 @@ urlpatterns = [
 ]
 
 -----------------------------------------------------------------------------------------------
+https://angular.cn/guide/comparing-observables
 同一component多次访问时，比如URL的参数不同。
 //copied from app.module.ts
 const appRoutes:Routes = [
