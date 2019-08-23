@@ -45,3 +45,38 @@ ngOnDestroy() {
   this.sub.unsubscribe();
 }
 --------------------------------------------------------------------------------
+
+html
+        <mat-form-field style="width: 100%">
+          <input matInput name="oa" (keyup)="applyFilter($event.target.value)">
+        </mat-form-field>
+
+ts
+ getDatas() {
+    this.service.getDatas()
+      .subscribe(data => {
+        if (data !== undefined) {
+          this.dataSource = new MatTableDataSource(data);
+          this.dataSource.paginator = this.paginator;
+          // 指定支持过滤的项目
+          this.dataSource.filterPredicate = (orgAuthority: OrgAuthority, filter: string) =>
+            orgAuthority.org_cd.indexOf(filter) !== -1 ||
+            orgAuthority.org_name.indexOf(filter) !== -1 ||
+            orgAuthority.authority_name.indexOf(filter) !== -1;
+        }
+      },
+      error => {
+        if (error.status === 401) {
+          this.router.navigate(['/login/']);
+        }
+      });
+  }
+
+  applyFilter(filterValue: string) {
+    if (this.dataSource !== undefined) {
+      this.dataSource.filter = filterValue.trim();
+      if (this.dataSource.paginator) {
+        this.dataSource.paginator.firstPage();
+      }
+    }
+  }
