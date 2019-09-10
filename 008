@@ -80,3 +80,25 @@ ts
       }
     }
   }
+
+------------------------------------------------------------------------------------------
+等待显示
+xxx.html
+<mat-spinner *ngIf="spinnerDisplay"
+  style="position: fixed; top: 50%; left: 50%; z-index: 1000;"
+  [diameter]="80" [color]="'primary'" [mode]="'indeterminate'">
+</mat-spinner>
+
+xxx.ts
+getList() {
+this.spinnerDisplay = true;
+this.needService.getNeeds()
+  .subscribe((data) => {
+    this.spinnerDisplay = false;
+
+  },
+  err => {
+    this.spinnerDisplay = false;
+
+  });
+}
