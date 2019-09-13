@@ -1,0 +1,23 @@
+下载
+ts
+  downloadCarInfoList() {
+    const url = HOST + 'download_list/';
+    window.location.href = url;
+  }
+
+python
+url("download_list/$", download_list, name='download_list'),
+
+def download_list(request):
+	obj_list = obj.objects.all()
+    obj_list = obj_list.values(
+        "id", "name"
+    )
+    today = datetime.datetime.today()
+    response = HttpResponse(content_type='application/octet-stream; charset=cp932')
+    response['Content-Disposition'] = 'attachment; filename="product_table_%s.csv"' % today.strftime("%Y%m%d%H%M%S")
+    writer = csv.writer(response, delimiter=',', quotechar="'")
+    writer.writerow([quotes("id"), quotes("name")])
+    for obj in obj_list:
+        writer.writerow([quotes(car_info["id"]), quotes(car_info["name"]))])
+    return response
