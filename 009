@@ -14,7 +14,8 @@ def download_list(request):
         "id", "name"
     )
     today = datetime.datetime.today()
-    response = HttpResponse(content_type='application/octet-stream; charset=cp932')
+    response = HttpResponse(content_type='application/octet-stream')
+    response.write('\uFEFF')
     response['Content-Disposition'] = 'attachment; filename="product_table_%s.csv"' % today.strftime("%Y%m%d%H%M%S")
     writer = csv.writer(response, delimiter=',', quotechar="'")
     writer.writerow([quotes("id"), quotes("name")])
