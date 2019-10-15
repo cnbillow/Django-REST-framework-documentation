@@ -1,2 +1,78 @@
 django 权限
 https://cloud.tencent.com/developer/ask/44367
+
+html
+
+<highcharts-chart 
+  [Highcharts]="Highcharts"
+  [constructorType]="chartConstructor"
+  [options]="chartOptions"
+
+  [(update)]="updateFlag"
+  [oneToOne]="oneToOneFlag"
+  
+  class="display-sankey"
+></highcharts-chart>
+
+css
+
+.display-sankey {
+    width: 100%;
+    height: 1200px;
+    display: block;
+}
+
+
+ts
+
+import { Component, OnInit } from '@angular/core';
+import * as Highcharts from 'highcharts';
+declare const require: any;
+require('highcharts/modules/sankey')(Highcharts);
+require('highcharts/modules/exporting')(Highcharts);
+
+@Component({
+  selector: 'app-suplly-chain-sankey-diagram',
+  templateUrl: './suplly-chain-sankey-diagram.component.html',
+  styleUrls: ['./suplly-chain-sankey-diagram.component.css']
+})
+export class SupllyChainSankeyDiagramComponent implements OnInit {
+
+  Highcharts = Highcharts;
+  chartConstructor = 'chart';
+  chartOptions = {
+    title: {
+      text: 'Relationship between EV and Battery Makers'
+    },
+    series: [{
+      keys: ['from', 'to', 'weight'],
+      data: [
+        ['Audi', 'AU C-BEV', 95.0],
+        ['AU C-BEV', 'LGC', 95.0],
+        ['Audi', 'AU C-BEV', 95.0],
+        ['AU C-BEV', 'SDI', 95.0],
+        ['Audi', 'PPE41', 76.0],
+        ['PPE41', 'LGC', 76.0],
+        ['Audi', 'BEV Gen2', 116.6],
+        ['BEV Gen2', 'SDI', 116.6],
+        ['BMW', 'HV Gen5', 60.0],
+        ['HV Gen5', 'LGC', 60.0],
+        ['Model Y', 'Panasonic', 73.0],
+        ['Toyota', 'C-CUV/Sedan', 350.0],
+        ['C-CUV/Sedan', 'Panasonic', 350.0],
+        ['Toyota', 'B-hatch EV/CUV', 30.0],
+        ['B-hatch EV/CUV', 'Panasonic', 30.0]
+      ],
+      type: 'sankey',
+      name: 'Sankey Intelligence 2.0'
+    }]
+  };
+  updateFlag = false;
+  oneToOneFlag = true;
+
+  constructor() { }
+
+  ngOnInit() {
+  }
+
+}
