@@ -139,3 +139,269 @@ export class LineBasicComponent implements OnInit {
   }
 
 }
+
+--------------------------
+
+---html
+<div>
+  <mat-slide-toggle style="margin-left: 20px; margin-right:100px;" [(checked)]="slideAuto" labelPosition="after" (change)="changeSlideAuto()">{{ labelName }}</mat-slide-toggle>
+  <mat-button-toggle-group value="day" style="float: right; margin-right: 50px;">
+    <mat-button-toggle (change)="onToggleChange($event.value)" value="day">日</mat-button-toggle>
+  </mat-button-toggle-group>
+</div>
+<highcharts-chart 
+  [Highcharts]="Highcharts"
+  [constructorType]="chartConstructor"
+  [options]="chartOptions"
+
+  [(update)]="updateFlag"
+  [oneToOne]="oneToOneFlag"
+  
+  class="display-wordcloud"
+></highcharts-chart>
+<div style="text-align: center;">
+  <mat-slider style="width:95%;"
+    [(ngModel)]="selectedDate"
+    [step]="stepDate"
+    [min]="beginDate" [max]="endDate"
+    (change)="getWordCloudData()">
+  </mat-slider>
+</div>
+<div style="text-align: center;">{{ dateLabel }}</div>
+<mat-spinner *ngIf="spinnerDisplay"
+  style="position: absolute; top: 50%; left: 50%; z-index: 1000;"
+  [diameter]="60" [color]="'primary'" [mode]="'indeterminate'">
+</mat-spinner>
+
+
+---js
+import { Component, OnInit, Input, OnDestroy } from '@angular/core';
+import * as Highcharts from 'highcharts';
+declare const require: any;
+require('highcharts/modules/wordcloud')(Highcharts);
+import { Router } from '@angular/router';
+import { TrendwordsService } from '../../services/trendwords.service';
+
+@Component({
+  selector: 'app-slider-wordcloud',
+  templateUrl: './slider-wordcloud.component.html',
+  styleUrls: ['./slider-wordcloud.component.css']
+})
+export class SliderWordcloudComponent implements OnInit, OnDestroy {
+  // 検索キーワード
+  @Input() keyword: string;
+  // コレクションID
+  @Input() collectionId: string;
+  // 時間指定スライダーが自動的に動くか
+  @Input() slideAuto: boolean;
+  @Input() from_month: string;
+  @Input() to_month: string;
+  @Input() from_day: string;
+  @Input() to_day: string;
+  // Sliderの選択値
+  selectedDate: number;
+  // Sliderの開始値
+  beginDate: number;
+  // Sliderの終了値
+  endDate: number;
+  stepDate: number;
+  // ラベルの表示値
+  dateLabel: string;
+  // インターバル
+  interval_bs: any;
+  toggle = 'day';
+  spinnerDisplay = true;
+  labelName = '自動遷移オフ';
+
+  Highcharts = Highcharts;
+  chartConstructor = 'chart';
+  chartOptions = {
+    'series': [
+      {
+        'type': 'wordcloud',
+        'data': [],
+        'spiral': 'rectangular',
+        'placementStrategy': 'random',
+        'maxFontSize': 8,
+        'minFontSize': 2,
+        style: {
+          'fontFamily': 'sans-serif',
+          'fontWeight': '900',
+        },
+        'name': 'Occurrences',
+        // 横書き表示のための設定
+        'rotation': {
+          'from': 0,
+          'to': 0,
+          'orientations': 2
+        }
+      }
+    ],
+    'title': {
+      'text': null
+    },
+  };
+  updateFlag = false;
+  oneToOneFlag = true;
+
+  constructor(public router: Router,
+    private trendwordsService: TrendwordsService) { }
+
+  ngOnInit() {
+    this.initSet();
+    if (this.slideAuto === true) {
+      this.labelName = '自動遷移オン';
+      this.getWordCloudData();
+      this.startSlideAuto();
+    } else {
+      this.labelName = '自動遷移オフ';
+      this.getWordCloudData();
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.interval_bs) {
+      clearInterval(this.interval_bs);
+    }
+  }
+
+  // 時間指定スライダーが自動的に動き設定をオンにする
+  startSlideAuto() {
+    this.interval_bs = setInterval(() => {
+      if (this.toggle === 'day') {
+        if (this.selectedDate < this.endDate) {
+          this.selectedDate += 1000 * 60 * 60 * 24;
+        } else {
+          this.selectedDate = this.beginDate;
+        }
+      }
+      this.getWordCloudData();
+    }, 5000);
+  }
+
+  // 時間指定スライダーが自動的に動くかを切り替え
+  changeSlideAuto() {
+    this.slideAuto = !this.slideAuto;
+    if (this.slideAuto === false) {
+      this.labelName = '自動遷移オフ';
+      if (this.interval_bs) {
+        clearInterval(this.interval_bs);
+      }
+    } else {
+      this.labelName = '自動遷移オン';
+      this.startSlideAuto();
+    }
+  }
+
+  // 日毎ワードクラウドデータを取得
+  getWordCloudDataDay() {
+    const currDate = new Date(this.selectedDate);
+    this.dateLabel = currDate.getFullYear() + '/' + (currDate.getMonth() + 1) + '/' + currDate.getDate();
+    let param_day = '';
+    param_day += currDate.getFullYear();
+    param_day += ('0' + (currDate.getMonth() + 1)).slice(-2);
+    param_day += ('0' + currDate.getDate()).slice(-2);
+    this.trendwordsService.getTrendWordDayList(this.keyword, this.collectionId, param_day, param_day).subscribe(
+      data => {
+        this.spinnerDisplay = false;
+        const seriesData = [];
+        data.forEach(trendWord => {
+          seriesData.push(
+            {
+              name: trendWord.word,
+              weight: trendWord.weight,
+            });
+        });
+        this.chartOptions['series'][0]['data'] = seriesData;
+        this.updateFlag = true;
+      },
+      err => {
+        this.spinnerDisplay = false;
+        if (err.status === 401) {
+          this.router.navigate(['/login/']);
+          return;
+        } else {
+          //
+        }
+      }
+    );
+  }
+
+  onToggleChange(value: string) {
+    this.toggle = value;
+    this.initSet();
+    this.initToggleChange();
+    this.getWordCloudData();
+  }
+
+  initSet() {
+    if (this.toggle === 'month') {
+      this.beginDate = Number(this.from_month.substr(0, 4)) * 12 + Number(this.from_month.substr(4, 2));
+      this.endDate = Number(this.to_month.substr(0, 4)) * 12 + Number(this.to_month.substr(4, 2));
+      this.selectedDate = this.beginDate;
+      this.stepDate = 1;
+    }
+    if (this.toggle === 'week') {
+      let dBeginDate = new Date(Number(this.from_day.substr(0, 4)),
+                                  Number(this.from_day.substr(4, 2)) - 1,
+                                  Number(this.from_day.substr(6, 2)));
+      if (dBeginDate.getDay() !== 1) {
+        dBeginDate = new Date(Number(this.from_day.substr(0, 4)),
+                                Number(this.from_day.substr(4, 2)) - 1,
+                                Number(this.from_day.substr(6, 2)) + (7 - dBeginDate.getDay() + 1));
+      }
+      this.beginDate = dBeginDate.getTime();
+      let dEndDate = new Date(Number(this.to_day.substr(0, 4)),
+                                Number(this.to_day.substr(4, 2)) - 1,
+                                Number(this.to_day.substr(6, 2)));
+      if (dEndDate.getDay() !== 0) {
+          dEndDate = new Date(Number(this.to_day.substr(0, 4)),
+                                Number(this.to_day.substr(4, 2)) - 1,
+                                Number(this.to_day.substr(6, 2)) - dEndDate.getDay());
+      }
+      this.endDate = dEndDate.getTime();
+      this.selectedDate = this.beginDate;
+      this.stepDate = 1000 * 60 * 60 * 24 * 7;
+    }
+    if (this.toggle === 'day') {
+      this.beginDate = new Date(Number(this.from_day.substr(0, 4)),
+                                  Number(this.from_day.substr(4, 2)) - 1,
+                                  Number(this.from_day.substr(6, 2))).getTime();
+      this.endDate = new Date(Number(this.to_day.substr(0, 4)),
+                                Number(this.to_day.substr(4, 2)) - 1,
+                                Number(this.to_day.substr(6, 2))).getTime();
+      this.selectedDate = this.beginDate;
+      this.stepDate = 1000 * 60 * 60 * 24;
+    }
+  }
+
+  getWordCloudData() {
+    if (this.toggle === 'month') {
+      this.getWordCloudDataMonth();
+    }
+    if (this.toggle === 'week') {
+      this.getWordCloudDataWeek();
+    }
+    if (this.toggle === 'day') {
+      this.getWordCloudDataDay();
+    }
+  }
+
+  initToggleChange () {
+    if (this.interval_bs) {
+      clearInterval(this.interval_bs);
+    }
+    if (this.slideAuto === true) {
+      this.startSlideAuto();
+    }
+  }
+
+}
+
+
+---css
+.display-wordcloud {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
