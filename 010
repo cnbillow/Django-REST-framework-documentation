@@ -3,3 +3,6 @@ https://www.cnblogs.com/zhangtianyuan/p/6958054.html
 https://www.iteye.com/blog/dsbjoe-1179242
 https://yq.aliyun.com/articles/45449
 https://www.cnblogs.com/xiazh/archive/2012/10/29/2544808.html
+
+
+curl 'http://localhost:8983/solr/techproducts/update?commit=true' --data-binary @example/exampledocs/books.json -H 'Content-type:application/json'
