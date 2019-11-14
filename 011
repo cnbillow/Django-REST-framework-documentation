@@ -1,3 +1,99 @@
 slice2
 qaService
 zidingyi
+
+import { Pipe, PipeTransform } from '@angular/core';
+
+@Pipe({
+  name: 'slice2'
+})
+export class Slice2Pipe implements PipeTransform {
+
+  transform(value: string, args?: number): string {
+    let len = 130;
+    if (args != null && args > 0) {
+      len = args;
+    }
+    if (value == null || value.length < 1) {
+      return '';
+    }
+    if (value.length < len) {
+      return value;
+    }
+    // 何目のem
+    let index = 1;
+    const searchFromStr = value + '<em></em>';
+    let pos = this.findStrIndex(searchFromStr, '<em>', index);
+    while (pos < len && pos < value.length) {
+      const emPos = this.findStrIndex(searchFromStr, '<em>', index);
+      if (emPos > len) {
+        break;
+      } else {
+        index ++;
+        pos = this.findStrIndex(searchFromStr, '<em>', index);
+        len += '<em></em>'.length;
+      }
+    }
+    return value.substr(0, len) + '...';
+  }
+
+  /**
+   * サーチ文字列のインデックスを取得する
+   * @param str 文字列
+   * @param cha サーチ文字列
+   * @param num 何目
+   */
+  findStrIndex(str: string, cha: string, num: number) {
+    let x = str.indexOf(cha);
+    for (let i = 0; i < (num - 1); i++) {
+        x = str.indexOf(cha, x + 1);
+    }
+    return x;
+  }
+}
+
+
+
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Qa } from '../entities/Qa';
+import { HEADER, HOST } from '../const';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class QaService {
+
+  constructor(private http: HttpClient, ) { }
+
+  // QA一覧を取得
+  getQaList(qParam: string, startParam: string, rowsParam: string, manualOnly: boolean): Observable<Qa[]> {
+    const url = HOST + 'get_qa_list/';
+    qParam = qParam ? encodeURIComponent(qParam) : '*';
+    if　(/とは何|とは？/.test(qParam)) {
+      qParam += ' AND intent:_DEF_';
+    } else {
+      qParam = 'question:' + qParam;
+    }
+    if (manualOnly) {
+      qParam += ' AND source:tb';
+    }
+    return this.http.get<Qa[]>(url,
+      {
+        headers: new HttpHeaders(HEADER),
+        params: {
+          q: qParam, start: startParam, rows: rowsParam
+        }
+      });
+  }
+
+  // ハイライトワードを取得
+  getHighLightWords(q: string): Observable<string[]> {
+    const url = HOST + 'get_highLight_words/' + encodeURIComponent(q) + '/';
+    return this.http.get<string[]>(url,
+      {
+        headers: new HttpHeaders(HEADER),
+      });
+  }
+}
