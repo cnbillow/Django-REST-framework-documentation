@@ -1,1 +1,192 @@
-const
+export const HOST = environment.apiUrl;
+export const HEADER: { [key: string]: string; } = {'Content-Type': 'application/json'};
+
+# coding: utf-8
+import json
+from urllib import parse
+
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework import viewsets
+
+from ..serializers.solr_serializer import QaSerializer
+from .solr import search_qa
+
+
+class SolrViewset(viewsets.ViewSet):
+    @action(detail=False, methods=['get'])
+    def get_qa_list(self, request):
+        """QA一覧を取得"""
+        # パラメータを取得
+        q = request.GET.get("q", "")
+        q = parse.unquote(q)
+        start = int(request.GET.get("start", "0"))
+        rows = int(request.GET.get("rows", "5"))
+        # solrからQAリスト取得
+        response = search_qa(q, start, rows)
+        qa_list = []
+        if response.status_code == status.HTTP_200_OK:
+            result = json.loads(response.text)
+            docs = result['response']['docs']
+            i = 0
+            if docs:
+                for doc in docs:
+                    i += 1
+                    if "highlighting" in result and doc['id'] in result['highlighting']:
+                        highlighting = result['highlighting'][doc['id']]
+                    qa_list.append(
+                        {
+                            'index': start + i,
+                            'id': doc['id'] if 'id' in doc else '',
+                            'question': doc['question'] if 'question' in doc else '',
+                            'page': doc['page'] if 'page' in doc else '',
+                            'category': doc['category'] if 'category' in doc else '',
+                            'answer': doc['answer'] if 'answer' in doc else '',
+                            'entryDate': doc['entryDate'] if 'entryDate' in doc else None,
+                            'numFound': result['response']['numFound'],
+                            'htCategory': highlighting['category'][0] if 'category' in highlighting else '',
+                            'htQuestion': highlighting['question'][0] if 'question' in highlighting else '',
+                            'htAnswer': highlighting['answer'][0] if 'answer' in highlighting else '',
+                        }
+                    )
+        serializer = QaSerializer(qa_list, many=True)
+        return Response(serializer.data)
+
+
+# coding: utf-8
+import os
+
+from django.core.management.base import BaseCommand, CommandError
+from django.conf import settings
+
+from qa.views.solr import reg_json_file
+
+HTTP_200_OK = 200
+FILE_SUFFIX = ".json"
+
+
+def get_files(dir, suffix):
+    """
+    指定フォルダ直下に指定タイプのファイル配列を取得する
+
+    Parameters
+    ----------
+    dir: str
+        指定フォルダパス
+    suffix: str
+        ファイルタイプ
+
+    Returns
+    -------
+    file_list: str[]
+        取得したファイル配列
+    """
+    file_list = []
+    for root, directory, files in os.walk(dir):
+        for filename in files:
+            name, suf = os.path.splitext(filename)
+            if suf == suffix:
+                file_list.append(os.path.join(root, filename))
+    return file_list
+
+
+class Command(BaseCommand):
+    """
+    ドキュメントデータを一括登録する
+    使用例：python manage.py datafileupload <データ格納先フォルダ>
+    データ格納先フォルダを指定しない場合、デフォルトにAPP直下のdate(/qa_api/data)を指定します。
+    """
+    help = 'ドキュメントデータを一括登録するバッチ処理'
+
+    def add_arguments(self, parser):
+        parser.add_argument('file_path', nargs='?', type=str)
+
+    def handle(self, *args, **options):
+        # ファイルパスを取得
+        file_path = options['file_path']
+        if not file_path:
+            file_path = os.path.join(settings.BASE_DIR, "data")
+        else:
+            if not os.path.exists(file_path):
+                raise CommandError('ファイルパス「%s」が存在しません' % file_path)
+
+        # ファイル取得
+        files = get_files(file_path, FILE_SUFFIX)
+        if len(files) == 0:
+            raise CommandError('ファイルパス「%s」中にファイル（.json）が存在しません。ファイルを入れて、また他のパスを指定してください。' % file_path)
+        os.chdir(file_path)
+        for file in files:
+            status_code = reg_json_file(file)
+            if status_code != HTTP_200_OK:
+                raise CommandError('ファイル「%s」登録時にエラーを発生しました。' % os.path.basename(file))
+        self.stdout.write(self.style.SUCCESS("該当処理が正常に終了しました。"))
+
+
+
+# coding: utf-8
+import requests
+import urllib
+
+from ..const import SOLR_URL
+
+
+def search_qa(q, start, rows):
+    """
+    solrからQAを取得する
+
+    Parameters
+    ----------
+    q: str
+        検索キーワード
+    start: int
+        開始位置
+    rows: int
+        検索件数
+
+    Returns
+    -------
+    検索のレスポンス
+    """
+    params = {
+        "callback": "JSON_CALLBACK",
+        "q": q,
+        "start": start,
+        "rows": rows,
+        "fl": "* score",
+        "wt": "json",
+        "defType": "edismax",
+        "hl": "true",
+        "hl.fl": "category, question, answer",
+        "hl.fragsize": 0
+    }
+
+    return requests.get(
+        SOLR_URL + "select/",
+        headers={'Content-Type': 'application/json'},
+        params=params
+    )
+
+
+def reg_json_file(file):
+    """
+    solrにjsonファイルを登録する
+
+    Parameters
+    ----------
+    file: str
+        ファイルパス
+
+    Returns
+    -------
+    status_code: int
+        リダイレクトのステータスコード
+    """
+    url = SOLR_URL + 'update?commit=true&overwrite=true&boost=1.0'
+    with open(file, 'rb') as data_file:
+        my_data = data_file.read()
+    req = urllib.request.Request(url=url, data=my_data)
+    req.add_header('Content-type', 'application/json')
+    f = urllib.request.urlopen(req)
+    status_code = f.code
+    return status_code
