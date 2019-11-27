@@ -16,3 +16,18 @@ https://www.cnblogs.com/xiazh/archive/2012/10/29/2544808.html
 
 
 curl 'http://localhost:8983/solr/techproducts/update?commit=true' --data-binary @example/exampledocs/books.json -H 'Content-type:application/json'
+
+  <fieldType name="text_ja" class="solr.TextField" autoGeneratePhraseQueries="false" positionIncrementGap="100">
+    <analyzer>
+      <tokenizer class="solr.JapaneseTokenizerFactory" mode="search" userDictionary="lang/userdict_ja.txt"/>
+      <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true" />
+      <filter class="solr.JapaneseBaseFormFilterFactory"/>
+      <filter class="solr.JapanesePartOfSpeechStopFilterFactory" tags="lang/stoptags_ja.txt"/>
+      <filter class="solr.CJKWidthFilterFactory"/>
+      <filter class="solr.StopFilterFactory" words="lang/stopwords_ja.txt" ignoreCase="true"/>
+      <filter class="solr.JapaneseKatakanaStemFilterFactory" minimumLength="4"/>
+      <filter class="solr.LowerCaseFilterFactory"/>
+    </analyzer>
+  </fieldType>
+  
+  词典文件 utf-8 无bom
