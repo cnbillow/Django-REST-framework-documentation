@@ -1,0 +1,41 @@
+
+http://localhost:8983/solr/medical_190723/suggest?suggest=true&suggest.build=true&suggest.dictionary=mySuggester&wt=json&suggest.q=%E6%97%A5%E6%9C%AC
+
+https://github.com/projectblacklight/blacklight/issues/1972
+https://lucene.472066.n3.nabble.com/solr-5-2-gt-7-2-suggester-failure-td4383551.html
+
+solrconfig.xml
+  <searchComponent name="suggest" class="solr.SuggestComponent">
+    <lst name="suggester">
+      <str name="name">mySuggester</str>
+      <str name="lookupImpl">FuzzyLookupFactory</str>
+      <str name="dictionaryImpl">DocumentDictionaryFactory</str>
+      <str name="field">question</str>
+      <str name="weightField">question</str>
+     <!-- <str name="payloadField">id</str> -->
+      <str name="suggestAnalyzerFieldType">text_ja</str>
+      <str name="buildOnStartup">false</str>
+      <str name="buildOnCommit">false</str>
+    </lst>
+  </searchComponent>
+
+  <requestHandler name="/suggest" class="solr.SearchHandler"
+                  startup="lazy" >
+    <lst name="defaults">
+      <str name="suggest">true</str>
+      <str name="suggest.count">5</str>
+    </lst>
+    <arr name="components">
+      <str>suggest</str>
+    </arr>
+  </requestHandler>
+
+http://localhost:8983/solr/medical_190723/spell?spellcheck.q=djang&spellcheck=true&spellcheck.dictionary=file&spellcheck.build=true
+solrconfig.xml
+   <lst name="spellchecker">
+     <str name="classname">solr.FileBasedSpellChecker</str>
+     <str name="name">file</str>
+     <str name="sourceLocation">spellings.txt</str>
+     <str name="characterEncoding">UTF-8</str>
+     <str name="spellcheckIndexDir">spellcheckerFile</str>
+   </lst>
