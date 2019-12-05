@@ -1,3 +1,41 @@
+C:\Users\0191632\Downloads\solr-6.6.0\solr-6.6.0
+起動
+cd bin
+solr.cmd start
+停止
+solr.cmd stop -all
+
+
+docker restart solr
+docker ps
+
+
+管理アドレス
+http://localhost:8983/solr/
+
+新規core（下記参照）
+https://www.sunjs.com/article/detail/fa17527925dc4fd1830cfcf2e0a1b9a5.html
+①\solr-6.6.0\server\solr\の直下にnew_coreフォルダを作ります。
+②\solr-6.6.0\server\solr\configsets\basic_configs直下のconfをnew_coreにコピーします。
+③adminサイトでAdd Coreを押下します。
+
+https://mchcgr.ent.box.com/notes/360691378347?s=yyb2b33jdogyt6bbuui92j17qkh3d5om
+
+
+①JDKをインストールします。
+②solr6.6.0をダウンロードします。
+http://archive.apache.org/dist/lucene/solr/
+
+再起動
+http://localhost:8983/solr/admin/cores?action=RELOAD&core=medical_190723
+
+データを削除
+XML:
+<delete><query>*:*</query></delete>
+
+<optimize/>
+
+
 UTF-8无BOM的格式
 http://localhost:8983/solr/medical_190723/suggest?suggest=true&suggest.build=true&suggest.dictionary=mySuggester&wt=json&suggest.q=%E6%97%A5%E6%9C%AC
 
