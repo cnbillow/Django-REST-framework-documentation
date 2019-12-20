@@ -1,0 +1,10 @@
+managed-schema
+<fieldType name="rdate" class="solr.DateRangeField"/>
+<field name="issue_date" type="rdate" indexed="true" stored="true"/>
+
+インデックスのスペルチェックの追加のせいでSolrへの登録処理が遅くなります。
+
+画像の文字を認識
+https://blog.csdn.net/qq_38486203/article/details/82856422
+https://gammasoft.jp/blog/tesseract-ocr-install-on-windows/#download
+tesseract
