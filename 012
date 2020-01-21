@@ -1,3 +1,6 @@
+ cat /etc/crontab
+ * 1 * * * root /opt/app/qa_api_home/venv/bin/python3 /opt/app/qa_api_home/qa_api/manage.py solr_upd_index
+
 C:\Users\0191632\Downloads\solr-6.6.0\solr-6.6.0
 起動
 cd bin
