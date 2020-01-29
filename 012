@@ -1,6 +1,3 @@
-He/She shared you 1 files，Click link: https://c-t.work/s/bf963be3a81148 or use code:pwfajy to receive your file on CowTransfer
-
-He/She shared you 1 files，Click link: https://c-t.work/s/db9aeaf20e8344 or use code:nowmfs to receive your file on CowTransfer
 
  cat /etc/crontab
  * 1 * * * root /opt/app/qa_api_home/venv/bin/python3 /opt/app/qa_api_home/qa_api/manage.py solr_upd_index
