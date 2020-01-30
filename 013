@@ -1,0 +1,2 @@
+ng build --aot --build-optimizer true --output-hashing all --extract-css true --prod --base-href=/qa-app/
+ng build --aot --build-optimizer true --output-hashing all --extract-css true -c staging --base-href=/qa-app-test/
