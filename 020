@@ -11,6 +11,48 @@
     </analyzer>
   </fieldType>
 
+    <lst name="spellchecker">
+      <str name="classname">solr.FileBasedSpellChecker</str>
+      <str name="name">file</str>
+      <str name="sourceLocation">spellings.txt</str>
+      <str name="characterEncoding">UTF-8</str>
+      <str name="field">question</str>
+      <str name="spellcheckIndexDir">spellcheckerFile</str>
+    </lst>
+       
+    <lst name="spellchecker">
+      <str name="name">index</str>
+      <str name="field">question</str>
+      <str name="classname">solr.IndexBasedSpellChecker</str>
+      <str name="spellcheckIndexDir">spellchecker</str>
+      <str name="buildOnCommit">false</str>
+    </lst>
+    
+  <requestHandler name="/spell" class="solr.SearchHandler" startup="lazy">
+    <lst name="defaults">
+      <!-- Solr will use suggestions from both the 'default' spellchecker
+           and from the 'wordbreak' spellchecker and combine them.
+           collations (re-written queries) can include a combination of
+           corrections from both spellcheckers -->
+      <str name="spellcheck.dictionary">file</str>
+      <str name="spellcheck.dictionary">index</str>
+      <str name="spellcheck">on</str>
+      <str name="spellcheck.extendedResults">true</str>
+      <str name="spellcheck.count">10</str>
+      <str name="spellcheck.alternativeTermCount">5</str>
+      <str name="spellcheck.maxResultsForSuggest">5</str>
+      <str name="spellcheck.collate">true</str>
+      <str name="spellcheck.collateExtendedResults">true</str>
+      <str name="spellcheck.maxCollationTries">10</str>
+      <str name="spellcheck.maxCollations">5</str>
+      <str name="spellcheck.accuracy">0.5</str>
+    </lst>
+    <arr name="last-components">
+      <str>spellcheck</str>
+    </arr>
+  </requestHandler>
+
+
 managed-schema
 <fieldType name="rdate" class="solr.DateRangeField"/>
 <field name="issue_date" type="rdate" indexed="true" stored="true"/>
