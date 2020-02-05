@@ -27,3 +27,40 @@ https://www.angularjswiki.com/angular/creating-progress-spinner-in-angular/
 
 Material Design的图标字体
 https://www.imooc.com/article/details/id/1042
+
+
+pip install D:\tools\rsi-django-1.6.0.tar.gz
+python manage.py loaddata initial_data.json 初期データを投入
+python manage.py runserver --settings=qa_api.local_settings
+
+vim filename
+:set ff=unix
+exc :wq
+  
+    regex = r"^(販売名|一般名|リンク|発行日|申請者名|内容)(:|：)(.+)"
+    if re.match(regex, q):
+        str_arr = re.findall(regex, q)[0]
+        if str_arr[0] == "販売名":
+            str0 = "category"
+        if str_arr[0] == "一般名":
+            str0 = "generic"
+        if str_arr[0] == "リンク":
+            str0 = "page"
+        if str_arr[0] == "発行日":
+            str0 = "issue_date"
+        if str_arr[0] == "申請者名":
+            str0 = "applicant"
+        if str_arr[0] == "内容":
+            str0 = "question"
+        q = "".join([str0, ":", str_arr[2]])
+
+    q = q.replace(" 販売名:", " category:").replace(" 販売名：", " category:")
+    q = q.replace(" 一般名:", " generic:").replace(" 一般名：", " generic:")
+    q = q.replace(" リンク:", " page:").replace(" リンク：", " page:")
+    q = q.replace(" 発行日:", " issue_date:").replace(" 発行日：", " issue_date:")
+    q = q.replace(" 申請者名:", " applicant:").replace(" 申請者名：", " applicant:")
+    q = q.replace(" 内容:", " question:").replace(" 内容：", " question:")
+
+
+    q = q.replace(/(販売名|一般名|リンク|発行日|申請者名|内容)：/gi, '');
+    q = q.replace(/(販売名|一般名|リンク|発行日|申請者名|内容):/gi, '');
