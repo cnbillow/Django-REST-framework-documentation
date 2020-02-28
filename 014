@@ -3,3 +3,30 @@ join 検索
 https://lucene.apache.org/solr/guide/7_2/other-parsers.html#joining-across-collections
 https://www.jianshu.com/p/67c42c20ce6f
 https://github.com/docker-solr/docker-solr/issues/188#issuecomment-433015264
+
+
+cd /usr/local/custom-image; docker build -t solr-test .
+docker run --name solr_test -p 8888:8983 -it solr-test bash -c "precreate-core medical_docs /opt/solr/server/solr/medical_docs; precreate-core medical_secs /opt/solr/server/solr/medical_secs; exec solr -f"
+docker restart solr_test
+
+FROM solr
+MAINTAINER ri 0191620@mchcgr.com
+
+ENV SERVER_PATH=/opt/solr/server/solr
+
+USER root
+
+WORKDIR $SERVER_PATH
+RUN mkdir medical_docs
+RUN mkdir medical_secs
+
+RUN mkdir medical_docs/data
+RUN mkdir medical_secs/data
+
+RUN cp -r $SERVER_PATH/configsets/sample_techproducts_configs/conf/ medical_docs
+RUN cp -r $SERVER_PATH/configsets/sample_techproducts_configs/conf/ medical_secs
+
+COPY medical_docs/conf $SERVER_PATH/medical_docs/conf
+COPY medical_secs/conf $SERVER_PATH/medical_secs/conf
+
+USER solr
