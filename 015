@@ -1,1 +1,33 @@
-
+    // a,b,other
+    const yesArray = [];
+    const notArray = [];
+    if (this.isA) {
+      yesArray.push('"a"');
+    } else {
+      notArray.push('"a"');
+    }
+    if (this.isB) {
+      yesArray.push('"b"');
+    } else {
+      notArray.push('"b"');
+    }
+    if (this.isOther) {
+      if (notArray.length > 0 && yesArray.length > 0) {
+        let notAdmRoute = '';
+        notArray.forEach(element => {
+          notAdmRoute += element + ' OR ';
+        });
+        qParam += ' NOT adm_route:(' + notAdmRoute.slice(0, -4) + ')';
+      }
+      if (yesArray.length === 0) {
+        qParam += ' NOT adm_route:*';
+      }
+    } else {
+      if (yesArray.length > 0) {
+        let qAdmRoute = '';
+        yesArray.forEach(element => {
+          qAdmRoute += element + ' OR ';
+        });
+        qParam += ' AND adm_route:(' + qAdmRoute.slice(0, -4) + ')';
+      }
+    }
