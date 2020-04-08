@@ -1,0 +1,62 @@
+https://www.reboriju.com/
+https://hanju17.com
+meiju17.com
+
+解析
+https://www.kuyunjiexi.com/?url=https://youku.cdn1-okzy.com/20200321/14250_d3f8e4e7/index.m3u8
+https://www.kuyunjiexi.com/?url=https://youku.cdn1-okzy.com/20200321/14250_d3f8e4e7/index.m3u8
+
+
+# -*- coding: utf-8 -*-
+import re
+import urllib.request
+from bs4 import BeautifulSoup
+
+
+# 根据指定的URL获取网页内容
+def gethtml(url):
+    req = urllib.request.Request(url)
+    response = urllib.request.urlopen(req)
+    html = response.read()
+    return html.decode('utf-8')
+
+
+def getmovielist(html):
+    soup = BeautifulSoup(html)
+    divs = soup.find_all('li', {'class': 'stui-vodlist__item'})
+    for div_html in divs:
+        info_url = div_html.find('a', {'class': 'stui-vodlist__thumb'}).attrs["href"]
+        getmovieinfo(info_url)
+        pic = div_html.find('a', {'class': 'stui-vodlist__thumb'}).attrs["data-original"]
+
+
+def getmovieinfo(url):
+    html = gethtml("https://hanju17.com" + url)
+    soup = BeautifulSoup(html)
+    div_detail = soup.find_all('div', {'class': 'stui-content__detail'})
+    info_dic = dict(
+        title=re.findall(r'<h3 class=\"title\">(.+?)</h3>', str(div_detail))[0],
+        area="韩国",
+        years=re.findall(r'<span class=\"text-muted hidden-xs\">年份：</span><a.*>(.+?)</a>', str(div_detail))[0],
+        zhuyan=re.findall(r'<p class=\"data\"><span>主演：</span>(.+?)</p>', str(div_detail))[0],
+        daoyan=re.findall(r'<p class=\"data\"><span>导演：</span>(.+?)</p>', str(div_detail))[0],
+    )
+    div_content = soup.find_all('div', {'class': 'stui-content__desc'})
+    info_dic["content"] = div_content[0].text.strip("\r\n").strip("\t")
+
+    play_list = []
+    
+    return info_dic
+
+
+if __name__ == "__main__":
+    tags_url = r"https://hanju17.com/index.php/vod/show/id/2/page/%d.html"
+    for x in range(1, 2):
+        movie_url = tags_url % x
+        movie_html = gethtml(movie_url)
+        getmovielist(movie_html)
+
+
+
+
+
