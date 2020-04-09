@@ -1,5 +1,3 @@
-pandas
-
 # -*- coding: utf-8 -*-
 import re
 import os
@@ -38,7 +36,8 @@ def get_play_url(url):
     play_url = ""
     html = gethtml("https://www.reboriju.com" + url)
     soup = BeautifulSoup(html)
-    # TODO 
+    # TODO 判断是否可以访问
+    ckplayer = soup.find('div', {'class': 'ckplayerchejxvgugwoujoizlm'})
     return play_url
 
 
@@ -71,7 +70,7 @@ def getmovieinfo(url):
         for juji in juji_list:
             juji_dic = dict(
                 juji=juji.find('a').text,
-                href=juji.find('a').attrs["href"]
+                href=get_play_url(juji.find('a').attrs["href"])
             )
             juji_dic_list.append(juji_dic)
         play_dic = dict(
@@ -84,8 +83,8 @@ def getmovieinfo(url):
 
 
 if __name__ == "__main__":
-    os.environ['http_proxy'] = 'http://0191632:1qazxsw2@prxb321.plain.sharedom.net:8080/'
-    os.environ['https_proxy'] = 'http://0191632:1qazxsw2@prxb321.plain.sharedom.net:8080/'
+    # os.environ['http_proxy'] = 'http://0191632:1qazxsw2@prxb321.plain.sharedom.net:8080/'
+    # os.environ['https_proxy'] = 'http://0191632:1qazxsw2@prxb321.plain.sharedom.net:8080/'
     tags_url = r"https://www.reboriju.com/dianshiju/_____%d.html"
     for x in range(1, 2):
         movie_url = tags_url % x
