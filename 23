@@ -1,0 +1,93 @@
+pandas
+
+# -*- coding: utf-8 -*-
+import re
+import os
+import urllib.request
+from bs4 import BeautifulSoup
+
+
+# 根据指定的URL获取网页内容
+def gethtml(url):
+    req = urllib.request.Request(url)
+    response = urllib.request.urlopen(req)
+    html = response.read()
+    return html.decode('utf-8')
+
+
+def getmovielist(html):
+    soup = BeautifulSoup(html)
+    divs = soup.find_all('li', {'class': 'col-sm-6 col-xs-3'})
+    for div_html in divs:
+        info_url = div_html.find('a', {'class': 'img-pic'}).attrs["href"]
+        getmovieinfo(info_url)
+        pic = div_html.find('a', {'class': 'img-pic'}).attrs["data-original"]
+
+
+def get_changjia_list(soup):
+    changjia_list = []
+    ul = soup.find('ul', {'class': 'details-play-nav'})
+    li_list = ul.find_all("li")
+    for li in li_list:
+        if li.text in ["酷云", "135", "最大", "最快", "酷酷", "永久", "速播"]:
+            changjia_list.append(li.text)
+    return changjia_list
+
+
+def get_play_url(url):
+    play_url = ""
+    html = gethtml("https://www.reboriju.com" + url)
+    soup = BeautifulSoup(html)
+    # TODO 
+    return play_url
+
+
+def getmovieinfo(url):
+    html = gethtml("https://www.reboriju.com" + url)
+    soup = BeautifulSoup(html)
+    div_detail = soup.find('div', {'class': 'col-sm-wide-7 col-xs-wide-65 vod-detail-info pt-xs-0'})
+    info_dic = dict(
+        title=re.findall(r'<h1>(.+?)</h1>', str(div_detail))[0],
+        bieming=re.findall(r'<span class=\"text-ccc\">别名：</span>(.+?)</li>', str(div_detail))[0],
+        status=re.findall(r'<span class=\"text-ccc\">状态：</span>(.+?)</li>', str(div_detail))[0],
+        type=div_detail.find('li', {'class': 'col-xs-1 text-overflow'}).text.replace("类型：", ""),
+        zhuyan=div_detail.find('li', {'class': 'col-md-1 text-overflow'}).text.replace("主演：", ""),
+        daoyan=div_detail.find('li', {'class': 'col-xs-2 hidden-xs'}).text.replace("导演：", ""),
+        shoubo=div_detail.find('li', {'class': 'col-xs-2 text-overflow'}).text.replace("首播时间：", ""),
+        jishu=re.findall(r'<span class=\"text-ccc\">集数：</span>(.+?)\r\n', str(div_detail))[0],
+        yuyan=re.findall(r'<span class=\"text-ccc\">语言/字幕：</span>(.+?)</li>', str(div_detail))[0],
+        diqu=re.findall(r'<span class=\"hidden-xs\">国家/</span>地区：</span>(.+?)</li>', str(div_detail))[0],
+        jianjie=re.findall(r'<span class=\"text-ccc\">简介：</span>(.+?)</p>', str(div_detail))[0],
+    )
+
+    play_dic_list = []
+    play_list = soup.find_all('ul', {'class': 'play-list'})
+    # changjia_list = get_changjia_list(soup)
+    changjia_list = ["线路一", "线路二", "线路三", "线路四", "线路五", "线路六", "线路七", "线路八", "线路九", "线路十", "线路十一", "线路十二"]
+    idx = 0
+    for play in play_list:
+        juji_dic_list = []
+        juji_list = play.find_all('li', {'class': 'col-lg-7 col-md-6 col-sm-5 col-xs-4 p-xs-5'})
+        for juji in juji_list:
+            juji_dic = dict(
+                juji=juji.find('a').text,
+                href=juji.find('a').attrs["href"]
+            )
+            juji_dic_list.append(juji_dic)
+        play_dic = dict(
+            xianlu=changjia_list[idx],
+            play=juji_dic_list
+        )
+        idx += 1
+        play_dic_list.append(play_dic)
+    return play_dic_list
+
+
+if __name__ == "__main__":
+    os.environ['http_proxy'] = 'http://0191632:1qazxsw2@prxb321.plain.sharedom.net:8080/'
+    os.environ['https_proxy'] = 'http://0191632:1qazxsw2@prxb321.plain.sharedom.net:8080/'
+    tags_url = r"https://www.reboriju.com/dianshiju/_____%d.html"
+    for x in range(1, 2):
+        movie_url = tags_url % x
+        movie_html = gethtml(movie_url)
+        getmovielist(movie_html)
