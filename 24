@@ -1,3 +1,34 @@
+vi /etc/crontab
+
+0 1 * * * root sh /opt/app/sh/bak_db.sh
+
+
+#!/bin/bash
+
+root_dir="/opt/app/mp_home"  # ルートディレクトリ
+db_dir=$root_dir"/mp"             # DBファイルの置く場所
+bak_dir=$root_dir"/backup"        # バックアップファイルの置く場所
+db_name="db.sqlite3"              # DBファイル名
+dt=$( date +"%Y%m%d%H%M%S" )      # バックアップ日時
+
+# バックアップ処理
+mkdir -p $bak_dir && cp -f "$db_dir/$db_name" $bak_dir
+mv "$bak_dir/$db_name" "$bak_dir/$db_name.$dt"
+
+# 削除処理
+for n in $bak_dir/*; do
+    file_dt=${n##*.}
+    comp_date=$(date -d "-2 days" '+%Y%m%d')
+    comp_time="000000"
+    comp_dt=${comp_date}${comp_time}
+    if [ $comp_dt -lt $file_dt ]; then
+        continue
+    fi
+    rm -f "$n"
+done
+
+
+-----------------------------------------------------------------------
 
 <div class="container">
     <div class="header">
