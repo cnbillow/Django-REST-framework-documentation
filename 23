@@ -1,1 +1,15 @@
 
+    // 分子量
+    if ((this.qMolecularWeightBegin !== undefined && this.qMolecularWeightBegin !== null) ||
+        (this.qMolecularWeightEnd !== undefined && this.qMolecularWeightEnd !== null)) {
+      if (this.qMolecularWeightBegin === undefined || this.qMolecularWeightBegin === null) {
+        qParam += ' AND molecular_weight:[* TO ';
+      } else {
+        qParam += ' AND molecular_weight:[' + this.qMolecularWeightBegin + ' TO ';
+      }
+      if (this.qMolecularWeightEnd === undefined || this.qMolecularWeightEnd === null) {
+        qParam += '*]';
+      } else {
+        qParam += this.qMolecularWeightEnd + ']';
+      }
+    }
