@@ -1,10 +1,1 @@
-  replaceSpaceAndCase(val) {
-    if (val === undefined || val === null) {
-      return '';
-    }
-    // 全角スペース、複数スペースから1つ半角スペースを変更
-    val = val.replace(/\s+/g, ' ');
-    // 小文字のAND/ORは大文字にする
-    val = val.replace(/ AND /gi, ' AND ').replace(/ OR /gi, ' OR ');
-    return val;
-  }
+
