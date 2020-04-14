@@ -1,1 +1,12 @@
-
+                <a routerLink="/company/{{ company.name }}/" [queryParams]="{all_count: company.article_all_count, factor_count: company.article_factor_count, person_count: company.article_person_count}">
+                  <mat-icon>dashboard</mat-icon>Dashboardへ
+                </a>
+                
+                
+                    this.sub = this.activatedRoute.params.subscribe(params => {
+      this.maker = params['maker'];
+    });
+    
+    private activatedRoute: ActivatedRoute,
+    
+    import { ActivatedRoute, ParamMap } from '@angular/router';
