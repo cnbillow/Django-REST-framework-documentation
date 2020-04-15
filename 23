@@ -1,1 +1,2 @@
 
+/opt/app/qa_api_home/venv/bin/python3 /opt/app/qa_api_home/qa_api/manage.py pdf2qa [--skip] [pdf格納先フォルダ] [json出力先フォルダ]
