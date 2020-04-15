@@ -1,12 +1,48 @@
-                <a routerLink="/company/{{ company.name }}/" [queryParams]="{all_count: company.article_all_count, factor_count: company.article_factor_count, person_count: company.article_person_count}">
-                  <mat-icon>dashboard</mat-icon>Dashboardへ
-                </a>
-                
-                
-                    this.sub = this.activatedRoute.params.subscribe(params => {
-      this.maker = params['maker'];
-    });
-    
-    private activatedRoute: ActivatedRoute,
-    
-    import { ActivatedRoute, ParamMap } from '@angular/router';
+.menu {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    -moz-transform: translateX(-50%) translateY(-50%);
+    -webkit-transform: translateX(-50%) translateY(-50%);
+    transform: translateX(-50%) translateY(-50%);
+}
+.menu mat-toolbar {
+    width: 400px;
+    margin-bottom: 40px;
+    cursor: pointer;
+}
+
+-----------------
+<div class="menu">
+    <mat-toolbar class="mat-primary" (click)="openUserdict()">ユーザ辞書編集画面</mat-toolbar>
+    <mat-toolbar class="mat-primary" (click)="openSynonyms()">類義語編集画面</mat-toolbar>
+    <mat-toolbar class="mat-primary" (click)="downloadManual()">管理者用マニュアル</mat-toolbar>
+</div>
+-------------------
+import { Component, OnInit } from '@angular/core';
+
+@Component({
+  selector: 'app-admin',
+  templateUrl: './admin.component.html',
+  styleUrls: ['./admin.component.css']
+})
+export class AdminComponent implements OnInit {
+
+  constructor() { }
+
+  ngOnInit() {
+  }
+
+  openUserdict() {
+    window.open('./userdict', '_blank');
+  }
+
+  openSynonyms() {
+    window.open('./synonyms', '_blank');
+  }
+
+  downloadManual() {
+    window.open('./assets/薬事問合せ対応支援（管理者向け）.pptx', '_blank');
+  }
+
+}
