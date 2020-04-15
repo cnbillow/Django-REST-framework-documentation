@@ -1,1 +1,77 @@
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(name)s %(module)s \
+                       %(process)d %(thread)d %(message)s'
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        }
+    },
+    'handlers': {
+        'to_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join('/var/logs/applications/qa_api',
+                                     'debug.log'),
+            'formatter': 'verbose',
+            'maxBytes': 1024 * 1024 * 10,
+            'backupCount': 5,
+        },
+        'error_log': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join('/var/logs/applications/qa_api',
+                                     'error.log'),
+            'formatter': 'verbose',
+        },
+        'pdf2qa_log': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join('/var/logs/applications/qa_api', 'pdf2qa.log'),
+            'formatter': 'verbose',
+            'maxBytes': 1024 * 1024 * 10,
+            'backupCount': 5,
+        },
+        'datafileupload_log': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join('/var/logs/applications/qa_api', 'datafileupload.log'),
+            'formatter': 'verbose',
+            'maxBytes': 1024 * 1024 * 10,
+            'backupCount': 5,
+        },
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['to_file', 'error_log'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'qa.views': {
+            'handlers': ['to_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'qa.management.commands.pdf2qa': {
+            'handlers': ['pdf2qa_log'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'qa.management.commands.datafileupload': {
+            'handlers': ['datafileupload_log'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'qa.management.commands': {
+            'handlers': ['error_log'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    }
+}
