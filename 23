@@ -3,3 +3,4 @@ cat /etc/crontab
 * 2 * * * root /opt/app/qa_api_home/venv/bin/python3 /opt/app/qa_api_home/qa_api/manage.py datafileupload
 
 codecommit
+https://docs.aws.amazon.com/zh_cn/codecommit/latest/userguide/setting-up-ssh-windows.html
