@@ -3,3 +3,25 @@
 codecommit
 https://docs.aws.amazon.com/zh_cn/codecommit/latest/userguide/setting-up-ssh-windows.html
 https://docs.aws.amazon.com/zh_cn/cli/latest/userguide/install-cliv2-windows.html
+
+
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install D:\tools\rsi-django-1.6.0.tar.gz
+pip install D:\Users\0191632\Downloads\rsi-django-1.7.7\rsi-django-1.7.7\rsi-django-1.7.7.tar.gz
+python manage.py createsuperuser
+
+pip install djangorestframework
+D:\mypro\rsi-sample-project\rsi-sample-project\sample_project
+
+venv/bin/python vdi_asset/manage.py collectstatic 
+
+>(test_prj_env)pip install django-extensions
+>(test_prj_env)pip install django-debug-toolbar
+>(test_prj_env)python manage.py makemigrations mcc_cks_tran_app
+python manage migrate vdi 0001 --fake
+>(test_prj_env)python manage.py migrate mcc_cks_tran_app
+python manage.py createsuperuser
+python manage.py createcachetable db_cache_table 
+python manage.py loaddata initial_data.json 初期データを投入
+>(test_prj_env)python manage.py runserver
