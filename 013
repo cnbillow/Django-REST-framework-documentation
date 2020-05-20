@@ -2,6 +2,39 @@ ng build --aot --build-optimizer true --output-hashing all --extract-css true --
 ng build --aot --build-optimizer true --output-hashing all --extract-css true -c staging --base-href=/qa-app-test/
 
 
-He/She shared you 1 files，Click link: https://c-t.work/s/d9338535ab1d45 or use code:g8tq9h to receive your file on CowTransfer
-He/She shared you 1 files，Click link: https://c-t.work/s/55fe0135c9d149 or use code:ih6hsx to receive your file on CowTransfer
-He/She shared you 1 files，Click link: https://c-t.work/s/221cd951921046 or use code:g1z5hw to receive your file on CowTransfer
+
+def change_newline_to_space(val):
+    """改行は半角スペースに置換"""
+    if val:
+        return val.replace("\n", " ")
+    else:
+        return ""
+
+
+def get_download_file_name(request, file_name):
+    user_agent = request.META["HTTP_USER_AGENT"]
+    if 'MSIE' in user_agent or 'Trident' in user_agent or 'Edge' in user_agent:
+        download_file_name = parse.quote(file_name)
+    else:
+        download_file_name = file_name.encode('utf-8').decode('ISO-8859-1')
+    return download_file_name
+
+
+def quotes(val):
+    """ダブルクォーテーションを付け"""
+    if val:
+        return '\"' + val + '\"'
+    else:
+        return '""'
+
+
+def download_needs(request):
+    rows = 
+    response = HttpResponse(content_type='application/octet-stream')
+    response.write('\uFEFF')
+    response['Content-Disposition'] = 'attachment; filename="%s"' % get_download_file_name(request, "aa.csv")
+    writer = csv.writer(response, delimiter=',', quotechar="'")
+    writer.writerow([quotes("表題"), quotes("値")])
+    for row in rows:
+        writer.writerow([quotes(row.title), quotes(row.value)])
+    return response
