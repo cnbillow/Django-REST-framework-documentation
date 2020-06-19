@@ -10,28 +10,3 @@ codecommit
 https://docs.aws.amazon.com/zh_cn/codecommit/latest/userguide/setting-up-ssh-windows.html
 https://docs.aws.amazon.com/zh_cn/cli/latest/userguide/install-cliv2-windows.html
 
-FROM centos
-MAINTAINER TigerLee
-
-ADD epel.repo /etc/yum.repos.d  # 将当前目录的epel.repo文件拷贝到容器的/etc/yum.repos.d目录下
-RUN yum update -y  # 运行命令
-
-RUN yum install -y python36
-RUN yum install -y python36-pip
-RUN pip3 install setuptools
-ADD Django-2.1.7.tar.gz /opt/
-
-WORKDIR /opt/  # 进入/opt目录
-RUN mv Django-2.1.7 django  # 运行命令mv
-
-WORKDIR /opt/django    # 进入/opt/django目录
-RUN python3 setup.py install
-
-WORKDIR /opt
-RUN django-admin.py startproject qishi3dj
-
-ADD run.sh /opt/qishi3dj/run.sh
-WORKDIR /opt/qishi3dj
-RUN chmod 777 run.sh
-EXPOSE 8000  # 声明容器端口
-CMD ["/bin/sh","run.sh"]  # 容器启动时默认执行的命令
