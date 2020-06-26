@@ -10,3 +10,5 @@ codecommit
 https://docs.aws.amazon.com/zh_cn/codecommit/latest/userguide/setting-up-ssh-windows.html
 https://docs.aws.amazon.com/zh_cn/cli/latest/userguide/install-cliv2-windows.html
 
+echo "/usr/local/lib" > /etc/ld.so.conf.d/sqlite3.conf
+ldconfig
