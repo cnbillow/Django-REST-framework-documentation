@@ -2,6 +2,7 @@ vi /etc/crontab
 
 0 1 * * * root sh /opt/app/sh/bak_db.sh
 
+https://c-t.work/s/3018d7da5abd46
 
 #!/bin/bash
 
