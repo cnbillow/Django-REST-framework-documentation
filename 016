@@ -1,0 +1,24 @@
+FROM node:10.16.0 as builder
+
+ENV APP_PATH /opt/app
+
+RUN mkdir $APP_PATH
+WORKDIR $APP_PATH
+COPY . $APP_PATH/
+
+RUN npm config set proxy http://0861649:uu141411@133.251.170.81:8080
+RUN npm config set https-proxy http://0861649:uu141411@133.251.170.81:8080
+
+RUN rm -rf $APP_PATH/dist/*
+RUN npm cache verify
+RUN npm install --no-package-lock
+
+RUN npm run build --aot --build-optimizer true --extract-css true --prod --base-href=/
+
+
+FROM nginx
+
+RUN rm -rf /usr/share/nginx/html/*
+COPY --from=builder /opt/app/dist/qa-app /usr/share/nginx/html
+
+COPY ./nginx/local.conf /etc/nginx/conf.d/local.conf
