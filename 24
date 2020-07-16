@@ -2,7 +2,7 @@ vi /etc/crontab
 
 0 1 * * * root sh /opt/app/sh/bak_db.sh
 
-https://github.com/iamvickyav/Spring-Boot-Solr-Using-Docker/blob/master/docker-compose.yml
+firewall-cmd --permanent --zone=public --add-rich-rule='rule family=ipv4 source address=172.17.0.0/16 accept' && firewall-cmd --reload
 
 #!/bin/bash
 
