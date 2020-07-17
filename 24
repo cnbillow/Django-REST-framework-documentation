@@ -2,7 +2,7 @@ vi /etc/crontab
 
 0 1 * * * root sh /opt/app/sh/bak_db.sh
 
-chown: changing ownership of '/opt/solr/server/solr/medical_docs/conf/_rest_managed.json': Operation not permitted
+https://c-t.work/s/ce66acf5289e45
 
 #!/bin/bash
 
