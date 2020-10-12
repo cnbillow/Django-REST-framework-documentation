@@ -30,3 +30,107 @@ done
 
 -----------------------------------------------------------------------
 
+
+def __compute_prod_cost(master, scenario, plan, periods) -> DataFrame:
+    is_supply = plan["SUPPLY/DEMAND"] == "SUPPLY"
+    cols_drop = ["SUPPLY/DEMAND", "SWAP/PFR"]
+    supply = plan[is_supply].drop(columns=cols_drop).groupby(["Plant", "Target"]).sum()
+    # TODO: いずれは以下の変数を使って書き換える
+    is_demand = plan["SUPPLY/DEMAND"] == "DEMAND"
+    demand = plan[is_demand].drop(columns=cols_drop).groupby(["Plant", "Target"]).sum()
+
+    # SUPPLY/DEMAND が SUPPLY で、Target が feeder.prod_lines に含まれる場合は、生産量
+    prod = supply.loc[(slice(None), master.prod_lines), periods]
+    for plant, prod_line in prod.index:
+        adjustment = f"{prod_line} Adjustment"
+        try:
+            prod.loc[(plant, prod_line), periods] += supply.loc[(plant, adjustment), periods]
+        except KeyError:
+            logger.info(f"{plant} の {prod_line} の Adjustment は存在しません。")
+
+    # SAMAC の生産量取り分の調整
+    try:
+        samac_prod = supply.loc["SAMAC", "Plant SAMAC"]
+        samac_captive = demand.loc["SAMAC", "Captive Polymer"]
+        samac_prod_true = (scenario.samac_share * (samac_prod - samac_captive) + samac_captive).loc[supply.columns]
+        prod.loc["SAMAC", "Plant SAMAC"] = samac_prod_true
+    except KeyError:
+        logger.warning("SAMAC の Captive Polymer または Plant SAMAC が登録されていません。")
+
+    prod_cost = prod.copy(deep=True)
+    production_master = master.production_master.set_index(["Plant", "Production Line"])
+    prod_cost["Category"] = production_master.loc[prod_cost.index, "Category"]
+    prod_cost = prod_cost.set_index("Category", append=True)
+    prod_cost = prod_cost.stack().unstack(level="Category")
+    prod_cost = (prod_cost * master.category_master.loc[prod_cost.columns, "Prod UC"]).unstack().stack("Category")
+    prod_cost = prod_cost.reset_index().set_index(["Plant", "Target"]).drop(columns="Category")
+    return prod_cost[periods]
+
+
+def __compute_sales(master, scenario, plan, periods) -> DataFrame:
+    # SUPPLY/DEMAND が DEMAND で、Target が feeder.customers に含まれる場合は、販売量
+    is_demand = plan["SUPPLY/DEMAND"] == "DEMAND"
+    is_customer = plan["Target"].isin(master.customers)
+    is_sell = is_demand & is_customer
+    if not is_sell.any():
+        return pd.DataFrame(index=[], columns=periods)
+    cols_drop = ["SUPPLY/DEMAND", "SWAP/PFR"]
+    sell = plan[is_sell].drop(columns=cols_drop).groupby(["Plant", "Target"]).sum()
+    # TODO: 本来はさらに scenario.intransit_prev を入れる
+    for (src, dst), row in sell.iterrows():
+        if src in master.distributors:
+            lt = 0
+        else:
+            src_country = master.scm_master.loc[src, "Country"]
+            dst_country = master.scm_master.loc[dst, "Country"]
+            lt = master.get_trans_lt_or_other(src_country, dst_country)
+        sell.loc[src, dst] = sell.loc[src, dst].shift(periods=lt, fill_value=0)
+    sell_price = scenario.sell_price
+    sell = sell.unstack(level="Target").reorder_levels([1, 0], axis=1)
+    sales = (sell * sell_price.stack()[sell.columns]).stack("Target")
+    return sales[periods]
+    
+    
+def __compute_trans_cost(master, plan, periods) -> DataFrame:
+    cols_drop = ["SUPPLY/DEMAND", "SWAP/PFR"]
+    trans = plan[plan["SUPPLY/DEMAND"] == "DEMAND"].drop(columns=cols_drop).groupby(["Plant", "Target"]).sum()
+    trans_cost = trans.copy(deep=True)
+    trans_uc = master.trans_uc.T.stack()
+    index_diff = set(trans.index) - set(trans_uc.index)
+    if len(index_diff) > 0:
+        logger.warning(f"{index_diff} が Trans UC に登録されておらず、輸送単価が 0 として計算します。")
+    series = pd.Series(0, index=trans_cost.index)
+    series.update(trans_uc)
+    for p in periods:
+        trans_cost[p] = trans_cost[p] * series[trans_cost.index]
+    return trans_cost[periods]
+    
+    
+def __compute_trans_lt(self):
+    senders = self.__plants | self.coproducers
+    receivers = senders | self.customers
+    idx_trans_lt = pd.MultiIndex.from_product([senders, receivers], names=["src", "dst"])
+    trans_lt = pd.Series(0, idx_trans_lt)
+
+    # TODO: 0 で初期化して、LT > 0 の国同士だけ更新する？
+    routes_demand = pd.MultiIndex.from_product([self.__plants, receivers], names=["src", "dst"])
+    routes_supply = pd.MultiIndex.from_product([self.coproducers, self.__plants], names=["src", "dst"])
+    available_routes = routes_demand.union(routes_supply)
+    for (src, dst) in available_routes:
+        if dst in self.captives:
+            trans_lt.loc[src, dst] = 0
+            continue
+        src_country = self.__country[self.decode[src]]
+        dst_country = self.__country[self.decode[dst]]
+        trans_lt.loc[src, dst] = self.__master.get_trans_lt_or_other(src_country, dst_country)
+    return trans_lt
+    
+    
+def remove_invalid(self, data: DataFrame) -> DataFrame:
+    processed = data.copy()
+    is_from_coproducer = data["src"].str.contains("SWAP|PFR")
+    is_to_plant = processed["dst"].isin(self.__plants)
+    is_cyclic = processed["src"] == processed["dst"]
+    is_invalid = (is_from_coproducer & ~is_to_plant) | is_cyclic
+    processed = processed.loc[~is_invalid]
+    return processed
