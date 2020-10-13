@@ -12,3 +12,33 @@ https://docs.aws.amazon.com/zh_cn/cli/latest/userguide/install-cliv2-windows.htm
 
 echo "/usr/local/lib" > /etc/ld.so.conf.d/sqlite3.conf
 ldconfig
+
+Wikipediaのデータ準備方法
+wikipediaの日本語データをダウンロード（ファイル：jawiki-latest-pages-articles.xml.bz2） https://dumps.wikimedia.org/jawiki/latest/
+
+データ整形スクリプトをcloneする（リポジトリ：Wikipedia Extractor） https://github.com/attardi/wikiextractor
+
+WikiExtractorを実行する
+
+python WikiExtractor.py -b 500K -o wikipedia --json jawiki-latest-pages-articles.xml.bz2
+　-b: 分割する1ファイル辺りのサイズ容量
+　-o: 出力するフォルダ名
+　--json：json形式で出力
+出力されるディレクトリ構成
+wikipedia
+├ AA
+│ ├── wiki_00.json
+│ ├── wiki_01.json
+│ │ ・
+│ │ ・
+│ └── wiki_99.json
+├ AB
+│ ・
+│ ・
+└ CE
+jsonデータの項目
+項目	内容
+id	文書ID
+url	wikipediaへのリンク
+title	単語
+text	単語の説明文書
