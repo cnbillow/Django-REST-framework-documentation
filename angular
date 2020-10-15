@@ -1,0 +1,20 @@
+遍历页面中的a标签
+https://stackblitz.com/edit/angular-dom-sanitizer-rcjhpp?file=src/app/app.component.ts
+https://stackoverflow.com/questions/37676726/angular-2-innerhtml-click-binding
+import { Component, OnInit, ElementRef, AfterViewChecked } from '@angular/core';
+    constructor(private elementRef: ElementRef) {}
+
+    public handleAnchorClick = (event: Event) => {
+        event.preventDefault();
+        const anchor = event.target as HTMLAnchorElement;
+        alert(`You are trying to navigate to ${anchor.href}`);
+    }
+
+    ngAfterViewChecked () {
+        if (this.articles.length > 0) {
+            const anchors = this.elementRef.nativeElement.querySelectorAll('table a');
+            anchors.forEach((anchor: HTMLAnchorElement) => {
+                anchor.addEventListener('click', this.handleAnchorClick);
+            });
+        }
+    }
