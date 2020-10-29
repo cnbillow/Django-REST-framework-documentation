@@ -1,0 +1,11 @@
+ng --version
+
+npm uninstall -g angular-cli
+npm cache verify
+npm install -g @angular/cli@latest
+npm cache verify
+ng update @angular/core
+ng update @angular/cli @angular/core
+ng update @angular/material
+
+npm升级package.json依赖包到最新版本
