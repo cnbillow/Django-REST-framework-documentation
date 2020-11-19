@@ -1,0 +1,45 @@
+managed-schema
+  <field name="category" type="strings" indexed="true" stored="true" multiValued="true"/>
+  
+
+def search_facet(q, fq):
+    params = {
+        "facet": "on",
+        "facet.field": ["title", "category", "related_item", "external_link"],
+        "facet.limit": settings.FACET_LIMIT,
+        "df": "text",
+        "fq": fq if len(fq) <= 1 else " AND ".join(fq),
+        "rows": 0,
+    }
+
+    solr = pysolr.Solr(settings.DOCS_SOLR_URL)
+    logger.info("q=" + q)
+    logger.info("params=" + str(params))
+    results = solr.search(q, **params)
+    return results.raw_response
+    
+
+facet_serializer.py
+# coding: utf-8
+from rest_framework import serializers
+
+
+class ItemSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    count = serializers.IntegerField()
+
+    class Meta(object):
+        fields = ("name", "count")
+
+
+class FacetSerializer(serializers.Serializer):
+    # 単語
+    title = ItemSerializer(many=True, read_only=True)
+    # カテゴリ
+    category = ItemSerializer(many=True, read_only=True)
+
+    class Meta(object):
+        fields = (
+            "title",
+            "category",
+        )
