@@ -1,0 +1,40 @@
+docker ps -a
+docker rm 3f04e568755d
+
+docker images
+docker rmi -f 4c7c608c79fb
+
+cd /docker-django/django/mysite
+docker build -t django .
+
+docker run -d --name test -p 8000:8000 -it django
+$ docker exec test python3 manage.py runserver 0.0.0.0:8000
+
+docker-compose exec django python manage.py makemigrations
+docker-compose exec django python manage.py migrate
+
+docker-compose exec django python manage.py wikifileupload
+
+docker-compose exec app python /opt/app/solr_tools/solr_upd_index.py -p 8983
+
+docker-compose up -d --build
+docker-compose build --no-cache
+docker-compose build
+docker-compose up -d
+
+docker-compose ps
+docker-compose down --volumes
+docker-compose logs
+
+docker volume ls
+docker volume inspect qa_docker_core_volume
+docker volume rm knowledge_db_wikipedia_volume
+
+docker-compose build --no-cache solr
+
+chown -R ec2-user:ec2-user /docker-django/django
+
+docker logs industry-miner
+find / -name 'aa.txt'
+
+docker-compose exec django /bin/bash -c 'python3 /opt/app/qa_api_home/qa_api/wikiextractor/WikiExtractor.py -b 500K -o /opt/app/qa_api_home/qa_api/data/wikipedia --json /opt/app/qa_api_home/qa_api/data/jawiki-latest-pages-articles.xml.bz2'
