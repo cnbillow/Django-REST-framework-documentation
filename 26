@@ -1,1 +1,37 @@
+def get_fq(categories, relatedItems):
+    category = categories if len(categories) <= 0 else " OR ".join(categories)
+    related_item = relatedItems if len(relatedItems) <= 0 else " OR ".join(relatedItems)
+    if category and related_item:
+        return "(%s) AND (%s)" % (category, related_item)
+    else:
+        if category:
+            return category
+        if related_item:
+            return related_item
+        return []
 
+    params = {
+        "callback": "JSON_CALLBACK",
+        "start": start,
+        "rows": rows,
+        "fl": "* score",
+        "wt": "json",
+        "defType": "edismax",
+        "hl": "true",
+        "hl.preserveMulti": "true",
+        "hl.fl": "title, text, category, related_item, external_link",
+        "hl.fragsize": 0,
+        "df": "text",
+        "fq": get_fq(categories, relatedItems),
+        "sort": "score desc",
+    }
+    
+    
+    params = {
+        "facet": "on",
+        "facet.field": ["category", "related_item"],
+        "facet.limit": 20,
+        "df": "text",
+        "fq": get_fq(categories, relatedItems),
+        "rows": 0,
+    }
