@@ -1,1 +1,191 @@
 
+# coding: utf-8
+import requests
+import urllib
+import pysolr
+import logging
+
+from django.conf import settings
+
+
+logger = logging.getLogger(__name__)
+edismax = {"defType": "edismax", "qf": "title^1.5 doc_title clear_text"}
+
+
+def add_quotes_for_fq(item_array):
+    """fq検索するときに、検索値を二重引用符追加"""
+    ret_item_array = []
+    for item in item_array:
+        pos = item.find(':')
+        field = item[:pos]
+        value = item[pos + 1:]
+        ret_item_array.append('%s:"%s"' % (field, value))
+    return ret_item_array
+
+
+def get_fq(fq):
+    fq = add_quotes_for_fq(fq)
+    return fq if len(fq) <= 1 else " OR ".join(fq)
+
+
+def search_qa(q, fq, start, rows):
+    """
+    solrからQAを取得する
+
+    Parameters
+    ----------
+    q: str
+        検索キーワード
+    start: int
+        開始位置
+    rows: int
+        検索件数
+
+    Returns
+    -------
+    検索のレスポンス
+    """
+    params = {
+        "callback": "JSON_CALLBACK",
+        "start": start,
+        "rows": rows,
+        "fl": "* score",
+        "wt": "json",
+        # "defType": "edismax",
+        # "qf": "title^1.5 doc_title clear_text",
+        "hl": "true",
+        # TODO ハイライト項目の追加・変更
+        "hl.fl": "title, clear_text",
+        "hl.fragsize": 0,
+        "fq": get_fq(fq),
+        "stopwords": "true",
+        "sort": "score desc",
+    }
+
+    solr = pysolr.Solr(settings.DOCS_SOLR_URL)
+    results = solr.search(q, **{**params, **edismax})
+    return results.raw_response
+
+
+def search_facet(q, fq):
+    """
+    solrからfacetを取得する
+
+    Parameters
+    ----------
+    q: str
+        検索キーワード
+
+    Returns
+    -------
+    検索のレスポンス
+    """
+    params = {
+        "facet": "on",
+        # TODO ファセット項目の追加・変更
+        "facet.field": ["major_doc_class", "doc_class", "sub_doc_class", "format"],
+        "facet.limit": settings.FACET_LIMIT,
+        "fq": get_fq(fq),
+        # "defType": "edismax",
+        # "qf": "title^1.5 doc_title clear_text",
+        "rows": 0,
+    }
+
+    solr = pysolr.Solr(settings.DOCS_SOLR_URL)
+    results = solr.search(q, **{**params, **edismax})
+    return results.raw_response
+
+
+def reg_json_file(file, core_name):
+    """
+    solrにjsonファイルを登録する。まだコミットしない。
+
+    Parameters
+    ----------
+    file: str
+        ファイルパス
+    core_name: str
+        core名前
+
+    Returns
+    -------
+    status_code: int
+        リダイレクトのステータスコード
+    """
+    url = settings.SOLR_ORIGIN + "solr/%s/update" % core_name
+    with open(file, "rb") as data_file:
+        my_data = data_file.read()
+    req = urllib.request.Request(url=url, data=my_data)
+    req.add_header("Content-type", "application/json")
+    f = urllib.request.urlopen(req)
+    status_code = f.code
+    return status_code
+
+
+def reg_json_commit(core_name):
+    """
+    登録するjsonファイルをコミットする
+
+    Parameters
+    ----------
+    core_name: str
+        core名前
+
+    Returns
+    -------
+    status_code: int
+        レスポンスのステータスコード
+    """
+    url = settings.SOLR_ORIGIN + "solr/%s/update?commit=true&overwrite=true&boost=1.0" % core_name
+
+    response = requests.get(url, headers={"Content-Type": "application/json"})
+    return response.status_code
+
+
+def solr_reload(core_name):
+    """
+    solrを再起動します
+
+    Returns
+    -------
+    status_code: int
+        レスポンスのステータスコード
+    """
+    params = {
+        "action": "RELOAD",
+        "core": core_name,
+    }
+
+    response = requests.get(settings.SOLR_ADMIN_URL, headers={"Content-Type": "application/json"}, params=params)
+    return response.status_code
+
+
+def get_spellcheck_suggestions(q):
+    """
+    スペルチェックをします
+
+    Returns
+    -------
+    レスポンス
+    """
+    url = settings.DOCS_SOLR_URL + "spell?q=" + q
+    return requests.get(url, headers={"Content-Type": "application/json"},)
+
+
+def delete_all_doc(core_name):
+    """
+    全てのdocumentsを削除する
+
+    Parameters
+    ----------
+    core_name: str
+        core名前
+
+    Returns
+    -------
+    無し
+    """
+    solr_url = settings.SOLR_ORIGIN + "solr/%s/" % core_name
+    solr = pysolr.Solr(solr_url)
+    solr.delete(q="*:*")
+    reg_json_commit(core_name)
