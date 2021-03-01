@@ -1,1 +1,11 @@
 
+  isActivePath(path): boolean {
+    const url = this.location.path();
+    if (url.endsWith(path)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+  <a mat-tab-link routerLink="heat-map" routerLinkActive [active]="isActivePath('heat-map')"></a>
