@@ -1,11 +1,12 @@
+black, flake8 の設定
+https://qiita.com/shinno21/items/c33802da7145b36106e2
 
-  isActivePath(path): boolean {
-    const url = this.location.path();
-    if (url.endsWith(path)) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-  
-  <a mat-tab-link routerLink="heat-map" routerLinkActive [active]="isActivePath('heat-map')"></a>
+Visual Studioのextension
+Python
+Angular Language Service
+Path Intellisense
+Angular 2 TypeScript Emmet
+angular2-inline
+TSLint
+Debugger for Chrome
+Draw.io Integration
