@@ -1,1 +1,83 @@
 
+djangorestframework
+
+N to N
+
+models.py
+class Project(CommonInfo):
+    memberRoles = models.ManyToManyField(Role, through="ProjectRoleMember", related_name='member_roles')
+    memberUsers = models.ManyToManyField(settings.AUTH_USER_MODEL, through="ProjectUserMember", related_name='member_users')
+    analyserRoles = models.ManyToManyField(Role, through="ProjectRoleAnalyser", related_name='analyser_roles')
+    analyserUsers = models.ManyToManyField(settings.AUTH_USER_MODEL, through="ProjectUserAnalyser", related_name='analyser_users')
+    
+class ProjectRoleMember(CommonInfo):
+    prj = models.ForeignKey(
+        Project, verbose_name="プロジェクトID", on_delete=models.CASCADE
+    )
+    role = models.ForeignKey(Role, verbose_name="ロールコード", on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = verbose_name_plural = "プロジェクトロール（メンバー）"
+        unique_together = ("prj_id", "role_id")
+        
+project_serializers.py
+class ProjectSerializer(serializers.ModelSerializer):
+    """Project モデルのシリアライザ"""
+
+    analyserRoles = RoleSerializer(many=True, read_only=True)
+    analyserUsers = UserSerializer(many=True, read_only=True)
+    memberRoles = RoleSerializer(many=True, read_only=True)
+    memberUsers = UserSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = models.Project
+        fields = (
+            "id",
+            "analyserRoles",
+            "analyserUsers",
+            "memberRoles",
+            "memberUsers",
+        )
+
+1 to N 
+
+
+class TargetCompanySettings(CommonInfo):
+    """対象会社設定"""
+
+    name = models.CharField("名称", max_length=40)
+    register_oano = models.CharField("登録者OA番号", max_length=150)
+    register_name = models.CharField("登録者名", max_length=20)
+
+    class Meta:
+        verbose_name = verbose_name_plural = "対象会社設定"
+        unique_together = ("name", "register_oano")
+        
+class TargetCompany(CommonInfo):
+    """対象会社"""
+
+    settings = models.ForeignKey(
+        TargetCompanySettings,
+        verbose_name="設定ID",
+        on_delete=models.CASCADE,
+    )
+
+
+target_company_settings_serializers.py
+
+class TargetCompanySettingsSerializer(serializers.ModelSerializer):
+    """TargetCompanySettings モデルのシリアライザ"""
+
+    targetCompanies = TargetCompanySerializer(
+        read_only=True, source="targetcompany_set", many=True
+    )
+
+    class Meta:
+        model = models.TargetCompanySettings
+        fields = (
+            "id",
+            "name",
+            "register_oano",
+            "register_name",
+            "targetCompanies",
+        )
