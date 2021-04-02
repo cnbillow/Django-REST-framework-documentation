@@ -1,1 +1,183 @@
 
+# coding: utf-8
+import datetime
+import decimal
+import urllib.parse
+import json
+
+import openpyxl
+from django.core.exceptions import ObjectDoesNotExist
+from django.http.response import HttpResponse
+from rest_framework import status
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from auth_tianyan.models import User
+from tianyan import models
+from tianyan.serializers.prj_target_company_serializers import (
+    PrjTargetCompanySerializer,
+)
+
+
+def get_set_from_str(str, delimiter, set):
+    arr = str.split(delimiter)
+    for str in arr:
+        set.add(str.strip())
+    return set
+
+
+class PrjTargetCompanyViewSet(viewsets.ModelViewSet):
+    queryset = models.PrjTargetCompany.objects.all()
+    serializer_class = PrjTargetCompanySerializer
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        prjId = request.GET.get("prjId")
+        if prjId:
+            try:
+                prjtargetcompanysettings = models.PrjTargetCompanySettings.objects.get(
+                    prj_id=prjId
+                )
+                queryset = prjtargetcompanysettings.prjtargetcompany_set.all()
+            except ObjectDoesNotExist:
+                queryset = models.PrjTargetCompany.objects.none()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["post"])
+    def upload_excel(self, request, prj_id):
+        if not hasattr(request, "FILES") or len(request.FILES) < 1:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        data = request.FILES["file"]
+        workbook = openpyxl.load_workbook(data.file)
+        try:
+            worksheet = list(workbook)[1]
+        except IndexError:
+            return Response(
+                "読み込んだExcelファイル中に、Sheet2が存在しません。",
+                status=status.HTTP_417_EXPECTATION_FAILED,
+            )
+        if worksheet.max_column != 4:
+            return Response(
+                "読み込んだExcelファイルのフォーマットが不正です。", status=status.HTTP_417_EXPECTATION_FAILED
+            )
+
+        user = User.objects.get(id=request.user.id)
+        project = models.Project.objects.get(id=prj_id)
+        if hasattr(project, "prjtargetcompanysettings"):
+            project.prjtargetcompanysettings.delete()
+
+        # プロジェクト対象会社設定登録
+        prj_target_company_settings = models.PrjTargetCompanySettings()
+        prj_target_company_settings.prj = project
+        prj_target_company_settings.ptcs_upd_dt = datetime.datetime.now()
+        prj_target_company_settings.ptcs_upd_oano = user.username
+        prj_target_company_settings.ptcs_upd_name = "{}{}".format(
+            user.last_name, user.first_name
+        )
+        prj_target_company_settings.fill_common_info(request)
+        prj_target_company_settings.save()
+
+        # # プロジェクト対象会社登録
+        prjTargetCompany_list = []
+        start_row = 1
+        for row in range(start_row, worksheet.max_row):
+            start_row += 1
+            if (
+                worksheet.cell(row=start_row, column=1).value
+                and worksheet.cell(row=start_row, column=2).value
+                and worksheet.cell(row=start_row, column=3).value
+                and worksheet.cell(row=start_row, column=4).value
+            ):
+                prjTargetCompany = models.PrjTargetCompany()
+                prjTargetCompany.ptsc_id = prj_target_company_settings.id
+                prjTargetCompany.name = worksheet.cell(row=start_row, column=1).value
+                prjTargetCompany.s1_pt = decimal.Decimal(
+                    worksheet.cell(row=start_row, column=2).value
+                )
+                prjTargetCompany.s2_pt = decimal.Decimal(
+                    worksheet.cell(row=start_row, column=3).value
+                )
+                prjTargetCompany.alias = worksheet.cell(row=start_row, column=4).value
+                prjTargetCompany.fill_common_info(request)
+                prjTargetCompany_list.append(prjTargetCompany)
+
+        models.PrjTargetCompany.objects.bulk_create(prjTargetCompany_list)
+        return Response(status=status.HTTP_200_OK)
+
+
+def download_excel(request, prj_id):
+    project = models.Project.objects.get(id=prj_id)
+    delimiter = request.GET.get("delimiter")
+
+    # 行データ
+    company_name_set = set()
+    for dataset in project.prjdatasets.all():
+        for prjrowdatalit in dataset.prjrowdatalit_set.all():
+            company_name_set = get_set_from_str(
+                prjrowdatalit.applicant, delimiter, company_name_set
+            )
+            company_name_set = get_set_from_str(
+                prjrowdatalit.quoter, delimiter, company_name_set
+            )
+
+    # 対象会社一覧
+    prjTargetCompanies = json.loads(request.GET.get("prjTargetCompanies"))
+    dict = {}
+    for prjtargetcompany in prjTargetCompanies:
+        if len(prjtargetcompany) >= 4:
+            company_list = prjtargetcompany["alias"].split(",")
+            for company in company_list:
+                company_name_set.add(company.strip())
+                dict[company.strip()] = [
+                    prjtargetcompany["name"],
+                    prjtargetcompany["s1_pt"],
+                    prjtargetcompany["s2_pt"],
+                ]
+
+    data_list = []
+    data_list.append(["会社名", "略称入力", "得点1", "得点2"])
+    company_name_list = list(company_name_set)
+    company_name_list.sort()
+    for company in company_name_list:
+        if company in dict:
+            data_list.append([company] + dict[company])
+        else:
+            data_list.append([company] + ["", "", ""])
+
+    name = (
+        "TargetCompany_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + ".xlsx"
+    )
+    workbook = openpyxl.Workbook()
+    workbook.guess_types = True
+    worksheet = workbook.active
+    worksheet.title = "Sheet1"
+    start_row = 1
+    for row in range(0, len(data_list)):
+        for col in range(0, len(data_list[row])):
+            cell = worksheet.cell(row=start_row, column=1 + col)
+            cell.value = data_list[row][col]
+        start_row += 1
+    stream = openpyxl.writer.excel.save_virtual_workbook(workbook)
+    response = HttpResponse(stream)
+    response["Content-Type"] = "application/octet-stream"
+    response["Content-Disposition"] = 'attachment; filename="{fn}"'.format(
+        fn=urllib.parse.quote(name)
+    )
+    return response
+
+
+urls.py
+urlpatterns = [
+    path(
+        "prjtargetcompany/download_excel/<int:prj_id>",
+        download_excel,
+    ),
+    path(
+        "prjtargetcompany/upload_excel/<int:prj_id>",
+        PrjTargetCompanyViewSet.as_view({"post": "upload_excel"}),
+    ),
+]
